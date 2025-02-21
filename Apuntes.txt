@@ -41,10 +41,15 @@ get block number in decimal
 echo $((16#$(curl -s -X POST --data '{"jsonrcp":"2.0","method":"eth_blockNumber","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:9999 |jq -r '.result' | sed 's/0x//')))
 
 get balance
-curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0xC31d5ECdc839e1cd8A8489D8D78335a07Ad82425","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999
-curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0xb04b8fa3100fcbe43f0a91e5ce81566a5a99f33e","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998
-curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0xC31d5ECdc839e1cd8A8489D8D78335a07Ad82425","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9997
-curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0x45edd4a17353c124c9454665e214b9ad637436d9","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996
+curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0x0d81daa21ebd5d7b634640162df2c3d33616e243","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999
+curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0x0d81daa21ebd5d7b634640162df2c3d33616e243","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998
+curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0x466d74980abcc1dbda8ff5e97932c10fba87bb99","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9997
+curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0x33b062f0773401e95530a12c17923cb5712c42cb","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996
+
+0x591a162517bdb97caa3ba574bfb29e0e81b90675
+0xd3040ac0bc95316ad39d5fdc022c767c322dc2fa
+0x466d74980abcc1dbda8ff5e97932c10fba87bb99
+0x33b062f0773401e95530a12c17923cb5712c42cb
 
 get node info in json
 curl -X POST --data '{"jsonrcp":"2.0","method":"admin_nodeInfo","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result.enode'

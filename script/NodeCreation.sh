@@ -47,7 +47,7 @@ for i in {1..4}; do
     
     # Save the public key to the node's public file
     echo "$public_key" > node$i/public
-    sleep 1 #trust me
+    sleep 2 #trust me
 done
 
 ######################################################
@@ -62,7 +62,7 @@ extradata="0x"$(printf '0%.0s' {1..64})"$address"$(printf '0%.0s' {1..130})
 ##Debug##
 echo $addressNode1
 echo $addressNode2
-echo $addressNode2
+echo $addressNode3
 echo $addressNode4
 ##Debug##
 
@@ -82,15 +82,13 @@ cat > genesis.json <<EOL
   "extraData": "$extradata",
   "gasLimit": "0x1fffffffffffff",
   "difficulty": "0x1",
-  "mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-  "coinbase": "0x0000000000000000000000000000000000000000",
   "alloc": {
-    "0xC31d5ECdc839e1cd8A8489D8D78335a07Ad82425": { "balance": "0x20000000000000000000000000000000" },
-    "0x3e3976a0d63A28c115037048A2Ae0FE9e456f474": { "balance": "0x10000000000000000000000000000000" },
+    "0xC31d5ECdc839e1cd8A8489D8D78335a07Ad82425": { "balance": "0x90000000000000000000000000000000000000000000000000000000000000" },
+    "0x3e3976a0d63A28c115037048A2Ae0FE9e456f474": { "balance": "0x80000000000000000000000000000000000000000000000000000000000000" },
     "0x613aaDB6D66bC91159fb07Faf6A6ABD95b3255E7": { "balance": "0x0" },
-    "$addressNode2": { "balance": "0x02000000000000000000000000000000" },
-    "$addressNode3": { "balance": "0x03000000000000000000000000000000" },
-    "$addressNode4": { "balance": "0x04000000000000000000000000000000" }
+    "$addressNode2": { "balance": "0x20000000000000000000000000000000000000000000000000000000000000" },
+    "$addressNode3": { "balance": "0x30000000000000000000000000000000000000000000000000000000000000" },
+    "$addressNode4": { "balance": "0x40000000000000000000000000000000000000000000000000000000000000" }
 
     
   }
@@ -126,7 +124,7 @@ for i in {1..4}; do
       --name node$i \
       --network besuNodes \
       --ip $ip \
-      -p $((9999-i)):8545 \
+      -p $((10000-i)):8545 \
       -v $(pwd):/data \
       hyperledger/besu:latest \
       --config-file=/data/config.toml \
@@ -174,12 +172,10 @@ send_raw_transaction() {
     local rpc_url=$1
     local signed_tx=$2
 
-    local json_rpc_request='{
-        "jsonrpc": "2.0",
-        "method": "eth_sendRawTransaction",
-        "params": ["'$signed_tx'"],
-        "id": 1
-    }'
+    local json_rpc_request=$(jq -n \
+        --arg st "$signed_tx" \
+        '{jsonrpc: "2.0", method: "eth_sendRawTransaction", params: [$st], id: 1}')
+
 
     echo "Sending raw transaction to $rpc_url..."
     local response=$(curl -s -X POST --data "$json_rpc_request" -H "Content-Type: application/json" "$rpc_url")
@@ -197,19 +193,19 @@ send_raw_transaction() {
 # Get the private key of node 1 (this should be done securely)
 # NOTE: In a real environment, never expose the private key in a script.
 # Here, it is assumed that the private key is stored in a file called `node1/key`
-node1PrivKey=$(cat node1/key)
+node1PrivKey=$(cat node1/key | tr -d '\n' | sed 's/^0x//')
 
 # Create the unsigned transaction
-unsignedTx='{
-    "from":"'$addressNode4'",
-    "nonce": "0x0",
-    "gasPrice": "0x9184e72a000",
-    "gas": "0x76c0",
-    "to": "'$addressNode2'",
-    "value": "0x01000000000000000000000000000000",  
-    "chainId": 123999
-}'
-
+unsignedTx=$(jq -n \
+    --arg from "$addressNode4" \
+    --arg to "$addressNode2" \
+    '{from: $from, 
+    nonce: "0x0", 
+    gasPrice: "0x3b9aca00",
+    gas: "0x5208",
+    to: $to, 
+    value: "0x16345785d8a0000", 
+    chainId: 123999}')
 
 # Sign the transaction using the Node.js script
 echo "Signing the transaction..."
@@ -218,12 +214,17 @@ signedTx=$(node -e "
     const web3 = new Web3();
     const unsignedTx = $unsignedTx;
     const privateKey = '$node1PrivKey';
-    const signedTx = web3.eth.accounts.signTransaction(unsignedTx, privateKey);
-    console.log(signedTx.rawTransaction);
+    web3.eth.accounts.signTransaction(unsignedTx, privateKey)
+        .then(signed => console.log(signed.rawTransaction))
+        .catch(err => console.error('Signing error:', err));
 ")
+echo "Signed Transaction: $signedTx"
+
 # Send the signed transaction
 echo "Sending the signed transaction..."
 hashTx=$(send_raw_transaction "http://localhost:9998" "$signedTx")
+
+echo "Transaction hash received: $hashTx"
 
 # Wait for the transaction receipt
 echo "Waiting for the transaction to be mined..."
