@@ -8,6 +8,11 @@ Para el sh
 
 Pasos
 
-docker network create nodos
+docker network create nodosBesu
 
+besu --data-path=nodo1 public-key export-address --to=nodo1/adress
 
+Para el genesid, alloc es nuestra direccion de metamask, extraData es la del nodo
+
+Config.toml
+    contiene el bootnodes=["enode://publickey@ip:puerto]
