@@ -63,6 +63,7 @@ cat > genesis.json <<EOL
 EOL
 
 # Generate the config.toml file for the Besu Clique network
+public=$(cat node1/public | cut -c3-)
 cat > config.toml <<EOL
 data-path = "/data/node1/data"
 genesis-file = "/data/genesis.json"
@@ -78,13 +79,14 @@ rpc-http-host = "0.0.0.0"
 rpc-http-port = 8545
 
 p2p-port = 30303
-bootnodes = []
+bootnodes = ["enode://$public@176.45.10.10:30303"]
 EOL
 
 # Start node1 using Docker
 docker run -d \
   --name node1 \
   --network besuNodes \
+  --ip 176.45.10.10 \
   -p 9999:8545 \
   -v $(pwd):/data \
   hyperledger/besu:latest \
