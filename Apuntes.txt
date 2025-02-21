@@ -41,4 +41,40 @@ get block number in decimal
 echo $((16#$(curl -s -X POST --data '{"jsonrcp":"2.0","method":"eth_blockNumber","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:9999 |jq -r '.result' | sed 's/0x//')))
 
 get balance
-curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0x613aaDB6D66bC91159fb07Faf6A6ABD95b3255E7","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999
+curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0xC31d5ECdc839e1cd8A8489D8D78335a07Ad82425","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999
+curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0xb04b8fa3100fcbe43f0a91e5ce81566a5a99f33e","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998
+curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0xC31d5ECdc839e1cd8A8489D8D78335a07Ad82425","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9997
+curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0x45edd4a17353c124c9454665e214b9ad637436d9","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996
+
+get node info in json
+curl -X POST --data '{"jsonrcp":"2.0","method":"admin_nodeInfo","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result.enode'
+
+
+
+
+
+# Función para enviar una transacción firmada
+send_raw_transaction() {
+    local rpc_url=$1
+    local signed_tx=$2
+
+    local json_rpc_request='{
+        "jsonrpc": "2.0",
+        "method": "eth_sendRawTransaction",
+        "params": ["'$signed_tx'"],
+        "id": 1
+    }'
+
+    echo "Sending raw transaction to $rpc_url..."
+    local response=$(curl -s -X POST --data "$json_rpc_request" -H "Content-Type: application/json" "$rpc_url")
+    local hashTx=$(echo "$response" | jq -r '.result')
+
+    if [ "$hashTx" != "null" ]; then
+        echo "Transaction sent successfully! Transaction hash: $hashTx"
+        echo "$hashTx"
+    else
+        echo "Failed to send transaction. Error: $(echo "$response" | jq -r '.error.message')"
+        return 1
+    fi
+}
+

@@ -1,21 +1,39 @@
 #!/bin/bash
 
 # Define the base directory
-BASE_DIR=$(dirname "$0")/..  # Move up one level from the script folder
-NODES_DIR="$BASE_DIR/nodes"
+baseDir=$(dirname "$0")/..  # Move up one level from the script folder
+nodesDir="$baseDir/nodes"
 
 # Create the "nodes" folder if it doesn't exist
-mkdir -p "$NODES_DIR"
+mkdir -p "$nodesDir"
 
 # Change to the "nodes" directory
-cd "$NODES_DIR" || exit 1
+cd "$nodesDir" || exit 1
 
+######################################################
 # Check if the Docker network besuNodes already exists
-if ! docker network ls | grep -q "besuNodes"; then
-    # Create the Docker network with the desired IP mask
-    docker network create --subnet=176.45.10.0/24 besuNodes
-fi
+if docker network ls | grep -q "besuNodes"; then
+    echo "Network 'besuNodes' already exists. Removing it..."
+    docker network rm besuNodes
 
+     if [ $? -ne 0 ]; then
+        echo "Failed to remove the existing 'besuNodes' network. Exiting..."
+        exit 1
+    fi
+    echo "Network 'besuNodes' removed successfully."
+   
+fi
+ # Create the Docker network with the desired IP mask
+   echo "Creating new 'besuNodes' network..."
+
+docker network create --subnet=176.45.10.0/24 besuNodes
+if [ $? -ne 0 ]; then
+    echo "Failed to create the 'besuNodes' network. Exiting..."
+    exit 1
+fi
+echo "Network 'besuNodes' created successfully."
+
+######################################################
 # Loop to generate keys and addresses for nodes 1 to 4
 for i in {1..4}; do
     # Create the necessary directory structure
@@ -29,9 +47,10 @@ for i in {1..4}; do
     
     # Save the public key to the node's public file
     echo "$public_key" > node$i/public
-
+    sleep 1 #trust me
 done
 
+######################################################
 # Generate the genesis.json file
 addressNode1=$(cat node1/address )
 addressNode2=$(cat node2/address )
@@ -78,6 +97,7 @@ cat > genesis.json <<EOL
 }
 EOL
 
+######################################################
 # Generate the config.toml file for the Besu Clique network
 public=$(cat node1/public | cut -c3-)
 cat > config.toml <<EOL
@@ -96,51 +116,136 @@ p2p-port = 30303
 bootnodes = ["enode://$public@176.45.10.10:30303"]
 EOL
 
-# Start node1 using Docker
-docker run -d \
-  --name node1 \
-  --network besuNodes \
-  --ip 176.45.10.10 \
-  -p 9999:8545 \
-  -v $(pwd):/data \
-  hyperledger/besu:latest \
-  --config-file=/data/config.toml \
-  --data-path=/data/node1/data \
-  --node-private-key-file=/data/node1/key
 
-# Start node2 using Docker
-docker run -d \
-  --name node2 \
-  --network besuNodes \
-  --ip 176.45.10.11 \
-  -p 9998:8545 \
-  -v $(pwd):/data \
-  hyperledger/besu:latest \
-  --config-file=/data/config.toml \
-  --data-path=/data/node2/data \
-  --node-private-key-file=/data/node2/key
+######################################################
+# Start nodes using Docker
+for i in {1..4}; do
+    ip="176.45.10.1$i"
+    echo "Starting node$i with IP $ip..."
+    docker run -d \
+      --name node$i \
+      --network besuNodes \
+      --ip $ip \
+      -p $((9999-i)):8545 \
+      -v $(pwd):/data \
+      hyperledger/besu:latest \
+      --config-file=/data/config.toml \
+      --data-path=/data/node$i/data \
+      --node-private-key-file=/data/node$i/key
+    sleep 2
+done
 
-  # Start node3 using Docker
-docker run -d \
-  --name node3 \
-  --network besuNodes \
-  --ip 176.45.10.12 \
-  -p 9997:8545 \
-  -v $(pwd):/data \
-  hyperledger/besu:latest \
-  --config-file=/data/config.toml \
-  --data-path=/data/node3/data \
-  --node-private-key-file=/data/node3/key
 
-  # Start node4 using Docker
-docker run -d \
-  --name node4 \
-  --network besuNodes \
-  --ip 176.45.10.13 \
-  -p 9996:8545 \
-  -v $(pwd):/data \
-  hyperledger/besu:latest \
-  --config-file=/data/config.toml \
-  --data-path=/data/node4/data \
-  --node-private-key-file=/data/node4/key
+######################################################
+# Wait for the nodes to be fully up and running
+# Function to check if a node is up and running
+check_node_ready() {
+    local rpc_url=$1
+    local max_attempts=3
+    local attempt=0
 
+    echo "Checking if node at $rpc_url is ready..."
+
+    while [ $attempt -lt $max_attempts ]; do
+        if curl -s -X POST --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}' -H "Content-Type: application/json" "$rpc_url" > /dev/null; then
+            echo "Node at $rpc_url is ready!"
+            return 0
+        else
+            echo "Node at $rpc_url not ready yet. Attempt $((attempt + 1))/$max_attempts..."
+            sleep 5
+            attempt=$((attempt + 1))
+        fi
+    done
+
+    echo "Node at $rpc_url did not start within the expected time."
+    return 1
+}
+
+# Check if nodes are ready
+check_node_ready "http://localhost:9998" || exit 1  # Node 2
+check_node_ready "http://localhost:9996" || exit 1  # Node 4
+
+
+######################################################
+
+
+# Function to send a raw signed transaction
+send_raw_transaction() {
+    local rpc_url=$1
+    local signed_tx=$2
+
+    local json_rpc_request='{
+        "jsonrpc": "2.0",
+        "method": "eth_sendRawTransaction",
+        "params": ["'$signed_tx'"],
+        "id": 1
+    }'
+
+    echo "Sending raw transaction to $rpc_url..."
+    local response=$(curl -s -X POST --data "$json_rpc_request" -H "Content-Type: application/json" "$rpc_url")
+    local tx_hash=$(echo "$response" | jq -r '.result')
+
+    if [ "$tx_hash" != "null" ]; then
+        echo "Transaction sent successfully! Transaction hash: $tx_hash"
+        echo "$tx_hash"
+    else
+        echo "Failed to send transaction. Error: $(echo "$response" | jq -r '.error.message')"
+        return 1
+    fi
+}
+
+# Get the private key of node 1 (this should be done securely)
+# NOTE: In a real environment, never expose the private key in a script.
+# Here, it is assumed that the private key is stored in a file called `node1/key`
+node1PrivKey=$(cat node1/key)
+
+# Create the unsigned transaction
+unsignedTx='{
+    "from":"'$addressNode4'",
+    "nonce": "0x0",
+    "gasPrice": "0x9184e72a000",
+    "gas": "0x76c0",
+    "to": "'$addressNode2'",
+    "value": "0x01000000000000000000000000000000",  
+    "chainId": 123999
+}'
+
+
+# Sign the transaction using the Node.js script
+echo "Signing the transaction..."
+signedTx=$(node -e "
+    const {Web3} = require('web3');
+    const web3 = new Web3();
+    const unsignedTx = $unsignedTx;
+    const privateKey = '$node1PrivKey';
+    const signedTx = web3.eth.accounts.signTransaction(unsignedTx, privateKey);
+    console.log(signedTx.rawTransaction);
+")
+# Send the signed transaction
+echo "Sending the signed transaction..."
+hashTx=$(send_raw_transaction "http://localhost:9998" "$signedTx")
+
+# Wait for the transaction receipt
+echo "Waiting for the transaction to be mined..."
+
+while true; do
+    transactionReceipt=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["'$hashTx'"],"id":1}' -H "Content-Type: application/json" http://localhost:9998 | jq -r '.result')
+    echo $transactionReceipt
+    if [ "$transactionReceipt" != "null" ]; then
+        echo "Transaction mined successfully!"
+        break
+    else
+        echo "Transaction not mined yet. Retrying in 5 seconds..."
+        sleep 5
+    fi
+done
+
+
+# Get the balances of node2 and node4 after the transaction
+node2Balance=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998 | jq -r '.result')
+node4Balance=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result')
+
+
+# Print the balances
+echo "Node2 balance after transaction: $node2Balance Wei"
+echo "Node4 balance after transaction: $node4Balance Wei"
