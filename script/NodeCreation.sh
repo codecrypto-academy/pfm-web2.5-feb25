@@ -33,8 +33,19 @@ for i in {1..4}; do
 done
 
 # Generate the genesis.json file
+addressNode1=$(cat node1/address )
+addressNode2=$(cat node2/address )
+addressNode3=$(cat node3/address )
+addressNode4=$(cat node4/address )
 address=$(cat node1/address | cut -c3-)
 extradata="0x"$(printf '0%.0s' {1..64})"$address"$(printf '0%.0s' {1..130})
+
+##Debug##
+echo $addressNode1
+echo $addressNode2
+echo $addressNode2
+echo $addressNode4
+##Debug##
 
 cat > genesis.json <<EOL
 {
@@ -57,7 +68,12 @@ cat > genesis.json <<EOL
   "alloc": {
     "0xC31d5ECdc839e1cd8A8489D8D78335a07Ad82425": { "balance": "0x20000000000000000000000000000000" },
     "0x3e3976a0d63A28c115037048A2Ae0FE9e456f474": { "balance": "0x10000000000000000000000000000000" },
-    "0x613aaDB6D66bC91159fb07Faf6A6ABD95b3255E7": { "balance": "0x0" }
+    "0x613aaDB6D66bC91159fb07Faf6A6ABD95b3255E7": { "balance": "0x0" },
+    "$addressNode2": { "balance": "0x02000000000000000000000000000000" },
+    "$addressNode3": { "balance": "0x03000000000000000000000000000000" },
+    "$addressNode4": { "balance": "0x04000000000000000000000000000000" }
+
+    
   }
 }
 EOL
@@ -65,10 +81,8 @@ EOL
 # Generate the config.toml file for the Besu Clique network
 public=$(cat node1/public | cut -c3-)
 cat > config.toml <<EOL
-data-path = "/data/node1/data"
-genesis-file = "/data/genesis.json"
-node-private-key-file = "/data/node1/key"
 
+genesis-file = "/data/genesis.json"
 
 min-gas-price = 0
 nat-method = "NONE"
@@ -90,4 +104,43 @@ docker run -d \
   -p 9999:8545 \
   -v $(pwd):/data \
   hyperledger/besu:latest \
-  --config-file=/data/config.toml
+  --config-file=/data/config.toml \
+  --data-path=/data/node1/data \
+  --node-private-key-file=/data/node1/key
+
+# Start node2 using Docker
+docker run -d \
+  --name node2 \
+  --network besuNodes \
+  --ip 176.45.10.11 \
+  -p 9998:8545 \
+  -v $(pwd):/data \
+  hyperledger/besu:latest \
+  --config-file=/data/config.toml \
+  --data-path=/data/node2/data \
+  --node-private-key-file=/data/node2/key
+
+  # Start node3 using Docker
+docker run -d \
+  --name node3 \
+  --network besuNodes \
+  --ip 176.45.10.12 \
+  -p 9997:8545 \
+  -v $(pwd):/data \
+  hyperledger/besu:latest \
+  --config-file=/data/config.toml \
+  --data-path=/data/node3/data \
+  --node-private-key-file=/data/node3/key
+
+  # Start node4 using Docker
+docker run -d \
+  --name node4 \
+  --network besuNodes \
+  --ip 176.45.10.13 \
+  -p 9996:8545 \
+  -v $(pwd):/data \
+  hyperledger/besu:latest \
+  --config-file=/data/config.toml \
+  --data-path=/data/node4/data \
+  --node-private-key-file=/data/node4/key
+

@@ -29,3 +29,16 @@ hyperledger/besu:latest \
 --data-path=/data/node1/data \
 --node-private-key-file=/data/node1/key \
 --genesis-file=/data/genesis.json
+
+
+get block by number
+curl -s -X POST --data '{"jsonrcp":"2.0","method":"eth_blockNumber","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:9999 |jq '.result'
+
+convert hexa to decimal
+echo $((16#1a9))
+
+get block number in decimal
+echo $((16#$(curl -s -X POST --data '{"jsonrcp":"2.0","method":"eth_blockNumber","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:9999 |jq -r '.result' | sed 's/0x//')))
+
+get balance
+curl -X POST --data '{"jsonrcp":"2.0","method":"eth_getBalance","params":["0x613aaDB6D66bC91159fb07Faf6A6ABD95b3255E7","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999
