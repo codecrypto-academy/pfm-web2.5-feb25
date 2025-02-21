@@ -1,0 +1,13 @@
+Para el sh
+    Network Docker 176.45.10.0/24
+        -2 Nodos validadores 
+        -2 nodos normales -1 es bootnode que se llama con enode
+    config.toml
+    genesis.json
+
+
+Pasos
+
+docker network create nodos
+
+
