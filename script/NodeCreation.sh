@@ -111,7 +111,7 @@ rpc-http-host = "0.0.0.0"
 rpc-http-port = 8545
 
 p2p-port = 30303
-bootnodes = ["enode://$public@176.45.10.10:30303"]
+bootnodes = ["enode://$public@176.45.10.11:30303"]
 EOL
 
 
@@ -165,8 +165,12 @@ check_node_ready "http://localhost:9996" || exit 1  # Node 4
 
 
 ######################################################
-
-
+echo "Balances before transaccion:"
+node2BalanceBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998/ | jq -r '.result')
+node4BalanceBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996/ | jq -r '.result')
+echo "Node2 balance before: $node2BalanceBefore Wei"
+echo "Node4 balance before: $node4BalanceBefore Wei"
+######################################################
 # Function to send a raw signed transaction
 send_raw_transaction() {
     local rpc_url=$1
@@ -192,20 +196,28 @@ send_raw_transaction() {
 
 # Get the private key of node 1 (this should be done securely)
 # NOTE: In a real environment, never expose the private key in a script.
-# Here, it is assumed that the private key is stored in a file called `node1/key`
-node1PrivKey=$(cat node1/key | tr -d '\n' | sed 's/^0x//')
+node4PrivKey=$(cat node4/key | tr -d '\n' | sed 's/^0x//') #| head -c 64
 
-# Create the unsigned transaction
+# Get the nonce for node4
+nonce=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionCount","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result')
+
+# Define the amount to send (in Wei)
+amountToSend="0x16345785d8a0000"  # 0.1 Ether in Wei
+
+# Create the unsigned transaction 
 unsignedTx=$(jq -n \
     --arg from "$addressNode4" \
     --arg to "$addressNode2" \
+    --arg nonce "$nonce" \
+    --arg value "$amountToSend" \
     '{from: $from, 
-    nonce: "0x0", 
+    nonce: $nonce, 
     gasPrice: "0x3b9aca00",
-    gas: "0x5208",
+    gas: "0xCF08",  # Aumentado a 53000 (0xCF08)
     to: $to, 
-    value: "0x16345785d8a0000", 
+    value: $value, 
     chainId: 123999}')
+echo "DEBUG: Unsigned transaction: $unsignedTx"
 
 # Sign the transaction using the Node.js script
 echo "Signing the transaction..."
@@ -213,7 +225,7 @@ signedTx=$(node -e "
     const {Web3} = require('web3');
     const web3 = new Web3();
     const unsignedTx = $unsignedTx;
-    const privateKey = '$node1PrivKey';
+    const privateKey = '$node4PrivKey';
     web3.eth.accounts.signTransaction(unsignedTx, privateKey)
         .then(signed => console.log(signed.rawTransaction))
         .catch(err => console.error('Signing error:', err));
@@ -246,7 +258,13 @@ done
 node2Balance=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998 | jq -r '.result')
 node4Balance=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result')
 
-
-# Print the balances
-echo "Node2 balance after transaction: $node2Balance Wei"
-echo "Node4 balance after transaction: $node4Balance Wei"
+#########################################################
+echo "Balances after the transaction:"
+node2BalanceAfter=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998/ | jq -r '.result')
+node4BalanceAfter=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996/ | jq -r '.result')
+echo "Node2 balance after: $node2BalanceAfter Wei"
+echo "Node4 balance after: $node4BalanceAfter Wei"
+#########################################################
+echo "Diferencia en balances:"
+echo "Node2: $((16#${node2BalanceAfter#0x} - 16#${node2BalanceBefore#0x})) Wei"
+echo "Node4: $((16#${node4BalanceAfter#0x} - 16#${node4BalanceBefore#0x})) Wei"
