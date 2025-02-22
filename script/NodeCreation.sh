@@ -60,10 +60,10 @@ address=$(cat node1/address | cut -c3-)
 extradata="0x"$(printf '0%.0s' {1..64})"$address"$(printf '0%.0s' {1..130})
 
 ##Debug##
-echo $addressNode1
-echo $addressNode2
-echo $addressNode3
-echo $addressNode4
+#echo $addressNode1
+#echo $addressNode2
+#echo $addressNode3
+#echo $addressNode4
 ##Debug##
 
 cat > genesis.json <<EOL
@@ -217,7 +217,7 @@ unsignedTx=$(jq -n \
     to: $to, 
     value: $value, 
     chainId: 123999}')
-echo "DEBUG: Unsigned transaction: $unsignedTx"
+#echo "DEBUG: Unsigned transaction: $unsignedTx"
 
 # Sign the transaction using the Node.js script
 echo "Signing the transaction..."
