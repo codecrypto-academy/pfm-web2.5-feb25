@@ -4,28 +4,49 @@
 baseDir=$(dirname "$0")/..  # Move up one level from the script folder
 nodesDir="$baseDir/nodes"
 
-# Create the "nodes" folder if it doesn't exist
+######################################################
+# Clean up previous setup (nodes folder, Docker network, and containers)
+echo "Cleaning up previous setup..."
+
+# Stop and remove any existing containers
+for container in $(docker ps -a --filter "name=node" --format "{{.Names}}"); do
+    echo "Stopping and removing container $container..."
+    docker stop "$container" > /dev/null 2>&1
+    docker rm "$container" > /dev/null 2>&1
+done
+
+# Remove the Docker network if it exists
+if docker network ls | grep -q "besuNodes"; then
+    echo "Removing existing Docker network 'besuNodes'..."
+    docker network rm besuNodes > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Failed to remove the existing 'besuNodes' network. Exiting..."
+        exit 1
+    fi
+    echo "Docker network 'besuNodes' removed successfully."
+fi
+
+# Remove the nodes directory if it exists
+if [ -d "$nodesDir" ]; then
+    echo "Removing existing nodes directory..."
+    rm -rf "$nodesDir"
+    if [ $? -ne 0 ]; then
+        echo "Failed to remove the nodes directory. Exiting..."
+        exit 1
+    fi
+    echo "Nodes directory removed successfully."
+fi
+
+######################################################
+# Create the "nodes" folder 
 mkdir -p "$nodesDir"
 
 # Change to the "nodes" directory
 cd "$nodesDir" || exit 1
 
 ######################################################
-# Check if the Docker network besuNodes already exists
-if docker network ls | grep -q "besuNodes"; then
-    echo "Network 'besuNodes' already exists. Removing it..."
-    docker network rm besuNodes
-
-     if [ $? -ne 0 ]; then
-        echo "Failed to remove the existing 'besuNodes' network. Exiting..."
-        exit 1
-    fi
-    echo "Network 'besuNodes' removed successfully."
-   
-fi
- # Create the Docker network with the desired IP mask
-   echo "Creating new 'besuNodes' network..."
-
+# Create the Docker network with the desired IP mask
+echo "Creating new 'besuNodes' network..."
 docker network create --subnet=176.45.10.0/24 besuNodes
 if [ $? -ne 0 ]; then
     echo "Failed to create the 'besuNodes' network. Exiting..."
@@ -96,7 +117,7 @@ cat > genesis.json <<EOL
 EOL
 
 ######################################################
-# Generate the config.toml file for the Besu Clique network
+# Generate the config.toml file 
 public=$(cat node1/public | cut -c3-)
 cat > config.toml <<EOL
 
