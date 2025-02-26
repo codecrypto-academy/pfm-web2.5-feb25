@@ -1,11 +1,13 @@
 set -e
 #Testing parameters
 NETWORK_NAME="besu-nodes"
+NETWORK_IP="172.19.0.0/16"
+BOOTNODE_IP="172.19.0.2"
 GENESIS_FILE="genesis.json"
 CONFIG_FILE="config.toml"
 NODE_PORT=9999
 DOCKER_PORT=8545
-WALLET_ADDRESS="0xf58b782F9082ea5D39099774af497CC41849e148"
+WALLET_ADDRESS="$(cat networks/$NETWORK_NAME/node1/address)"
 
 #Remove previous nodes & network
 for NODE_ID in {1..4}; do
@@ -17,23 +19,21 @@ for NODE_ID in {1..4}; do
   
 docker network rm $NETWORK_NAME 2>/dev/null && echo "Red $NETWORK_NAME eliminada."
 
-  #nodes files
-for NODE_ID in {1..4}; do
-    NODE_DIR="node$NODE_ID"
-    if [ -d "$NODE_DIR" ]; then
-        rm -rf "$NODE_DIR"
-      fi
-  done
+  #Remove network&nodes files
+  rm -rf networks/$NETWORK_NAME
+
+#make directory
+mkdir -p networks/$NETWORK_NAME
 
 #Network creation
-docker network create $NETWORK_NAME
+docker network create $NETWORK_NAME --subnet $NETWORK_IP --label network=$NETWORK_NAME --label type=besu
 
 #Node1 creation in besu
-besu --data-path=node1 public-key export-address --to=node1/address
-besu --data-path=node1 public-key export --to=node1/publickey
+besu --data-path=networks/$NETWORK_NAME/node1 public-key export-address --to=networks/$NETWORK_NAME/node1/address
+besu --data-path=networks/$NETWORK_NAME/node1 public-key export --to=networks/$NETWORK_NAME/node1/publickey
 
 #Genesis file generation
-cat > $GENESIS_FILE <<EOF
+cat > networks/$NETWORK_NAME/$GENESIS_FILE <<EOF
 {
   "config": {
     "chainId": 170194,
@@ -45,10 +45,10 @@ cat > $GENESIS_FILE <<EOF
     }
   },
   "difficulty": "0x1",
-  "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000$(cat node1/address | sed 's/0x//')0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000$(cat networks/$NETWORK_NAME/node1/address | sed 's/0x//')0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
   "gasLimit": "0xa00000",
   "alloc": {
-    "$(echo $WALLET_ADDRESS | sed 's/0x//')": {
+    "$(cat networks/$NETWORK_NAME/node1/address | sed 's/0x//')": {
      "balance": "0x200000000000000000000000000000000000000000000000000000000000000" 
      }
   }
@@ -56,7 +56,7 @@ cat > $GENESIS_FILE <<EOF
 EOF
 
 #Config file generation
-cat > $CONFIG_FILE <<EOF
+cat > networks/$NETWORK_NAME/$CONFIG_FILE <<EOF
 genesis-file="/data/genesis.json"
 
 p2p-host="0.0.0.0"
@@ -71,13 +71,13 @@ rpc-http-api=["ETH","NET","CLIQUE","ADMIN","TRACE","DEBUG","TXPOOL","PERM"]
 host-allowlist=["*"]
 
 discovery-enabled=true
-bootnodes=["enode://$(cat node1/publickey | sed 's/0x//')@172.19.0.2:30303"]
+bootnodes=["enode://$(cat networks/$NETWORK_NAME/node1/publickey | sed 's/0x//')@$BOOTNODE_IP:30303"]
 
 EOF
 
 #Node1 launched in Docker
-docker run -d --name node1 --network $NETWORK_NAME \
- -p $NODE_PORT:$DOCKER_PORT -v $(pwd):/data hyperledger/besu:latest \
+docker run -d --name node1 --label network=$NETWORK_NAME --ip $BOOTNODE_IP --network $NETWORK_NAME \
+ -p $NODE_PORT:$DOCKER_PORT -v $(pwd)/networks/$NETWORK_NAME:/data hyperledger/besu:latest \
  --config-file=/data/config.toml --data-path=/data/node1/data \
  --node-private-key-file=/data/node1/key
 
@@ -85,8 +85,8 @@ docker run -d --name node1 --network $NETWORK_NAME \
 sleep 5
 
 #Network function test
-curl -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:$NODE_PORT
-curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'"$WALLET_ADDRESS"'","latest"],"id":1}' -H "Content-Type:application/json" http://localhost:$NODE_PORT
+echo $((16#$(curl -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' -H "Content-Type: application/json" http://localhost:$NODE_PORT | jq -r '.result' | sed 's/0x//')))
+echo $((16#$(curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'"$WALLET_ADDRESS"'","latest"],"id":1}' -H "Content-Type:application/json" http://localhost:$NODE_PORT | jq -r '.result' | sed 's/0x//')))
 
 #Other nodes creation
 for NODE_ID in {2..4}; do
@@ -94,18 +94,17 @@ for NODE_ID in {2..4}; do
     NODE_PORT=$((NODE_PORT - 1))
 
     #Remove previous data if exist
-    rm -rf $NODE_DIR
-    mkdir -p $NODE_DIR/data
-
+    rm -rf networks/$NETWORK_NAME/$NODE_DIR
+  
     #Nodes launched in Docker
     docker run -d --name $NODE_DIR --network $NETWORK_NAME \
-    -p $NODE_PORT:$DOCKER_PORT -v $(pwd):/data hyperledger/besu:latest \
+    -p $NODE_PORT:$DOCKER_PORT -v $(pwd)/networks/$NETWORK_NAME:/data hyperledger/besu:latest \
     --config-file=/data/$CONFIG_FILE --data-path=/data/$NODE_DIR/data
 
     #lapse time before function test
     sleep 5
 
     #Other nodes function test. If Balance is the same in every node, that means all of them are well-connected to the network.
-    curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'"$WALLET_ADDRESS"'","latest"],"id":1}' -H "Content-Type:application/json" http://localhost:$NODE_PORT
+    echo $((16#$(curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'"$WALLET_ADDRESS"'","latest"],"id":1}' -H "Content-Type:application/json" http://localhost:$NODE_PORT | jq -r '.result' | sed 's/0x//')))
     done
   
