@@ -1,8 +1,12 @@
-import pkg from 'elliptic';
 import * as child_process from 'child_process';
 const { exec } = child_process;
 import { ethers } from 'ethers';
-const scriptPath = "../../scripts/";
+import * as path from 'path';
+const scriptPath = path.resolve(__dirname, '../../scripts/');
+export { getBalance, getBlockNumber, transferFrom, getNetworkInfo, launchNewNode, deleteNode };
+
+
+
 
 type JsonRpcResponse = {
     jsonrpc: string;
@@ -44,13 +48,15 @@ async function getBlockNumber(url: string): Promise<number> {
     return parseInt(data.result, 16);
 }
 
-async function transferFrom(url: string, fromPrivate: string, to: string, amount: number): Promise<ethers.providers.TransactionReceipt | null> {
+async function transferFrom(url: string, fromPrivate: string, to: string, amount: number): Promise<ethers.TransactionReceipt | null> {
     try {
         const wallet = new ethers.Wallet(fromPrivate);
-        const provider = new ethers.JsonRpcProvider(url, {
-            chainId: 123999,
-            name: "private",
-        });
+        /**const provider = new ethers.JsonRpcProvider(url, {
+        *    chainId: 123999,
+        *   name: "private",
+        *});
+        */
+        const provider = new ethers.JsonRpcProvider(url);
         const connectedWallet = wallet.connect(provider);
         const tx = await connectedWallet.sendTransaction({
             to: to,
@@ -77,7 +83,7 @@ async function getNetworkInfo(url: string): Promise<NetworkInfo> {
 
 
 function launchNewNode(): void {
-    exec(`${scriptPath}newNode.sh`, (error, stdout, stderr) => {
+    exec(`${scriptPath}/newNode.sh`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error executing newNode.sh: ${error.message}`);
             return;
@@ -91,7 +97,7 @@ function launchNewNode(): void {
 }
 
 function deleteNode(nodeId: string): void {
-    exec(`${scriptPath}deleteNode.sh ${nodeId}`, (error, stdout, stderr) => {
+    exec(`${scriptPath}/deleteNode.sh ${nodeId}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error executing deleteNode.sh: ${error.message}`);
             return;
