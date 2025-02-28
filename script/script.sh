@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # Script para crear una red Hyperledger Besu automatizada con validadores y fullnodes
-# Autor: Claude
-# Fecha: 28/02/2025
 
 # Colores para mensajes
 RED='\033[0;31m'
