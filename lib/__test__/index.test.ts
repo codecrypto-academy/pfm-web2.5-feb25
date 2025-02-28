@@ -46,25 +46,35 @@ describe("Blockchain API Methods", () => {
 
 describe("Script Execution Methods", () => {
     test("launchNewNode should execute newNode.sh", () => {
-        const execSpy = jest.spyOn(child_process, 'exec').mockImplementation((cmd: string, callback?: (error: ExecException | null, stdout: string, stderr: string) => void) => {
-            callback?.(null, "Success", "");
-            return {} as ChildProcess;
-        });
+        const execSpy = jest.spyOn(child_process, "exec").mockImplementation(
+            (cmd: string, options?: object | null | undefined, callback?: (error: ExecException | null, stdout: string, stderr: string) => void): ChildProcess => {
+                const cb = typeof options === "function" ? options : callback;
+                if (cb) {
+                    cb(null, "Success", "");
+                }
+                return {} as ChildProcess;
+            }
+        );
 
         launchNewNode();
-        expect(execSpy).toHaveBeenCalledWith(expect.stringContaining("newNode.sh"), expect.any(Function));
+        expect(execSpy).toHaveBeenCalledWith(expect.stringContaining("newNode.sh"), expect.anything(), expect.any(Function));
 
         execSpy.mockRestore();
     });
 
     test("deleteNode should execute deleteNode.sh with parameter", () => {
-        const execSpy = jest.spyOn(child_process, "exec").mockImplementation((cmd: string, callback?: (error: ExecException | null, stdout: string, stderr: string) => void) => {
-            callback?.(null, "Success", "");
-            return {} as ChildProcess;
-        });
+        const execSpy = jest.spyOn(child_process, "exec").mockImplementation(
+            (cmd: string, options?: object | null | undefined, callback?: (error: ExecException | null, stdout: string, stderr: string) => void): ChildProcess => {
+                const cb = typeof options === "function" ? options : callback;
+                if (cb) {
+                    cb(null, "Success", "");
+                }
+                return {} as ChildProcess;
+            }
+        );
 
         deleteNode("node123");
-        expect(execSpy).toHaveBeenCalledWith(expect.stringContaining("deleteNode.sh node123"), expect.any(Function));
+        expect(execSpy).toHaveBeenCalledWith(expect.stringContaining("deleteNode.sh node123"), expect.anything(), expect.any(Function));
 
         execSpy.mockRestore();
     });
