@@ -70,22 +70,6 @@ get_node_count() {
   print_message "Se crearán $node_count nodos (1 validador y $((node_count-1)) fullnodes)."
 }
 
-# Solicitar cuenta de Metamask
-get_metamask_account() {
-  print_message "A continuación, introduce una dirección de Metamask para incluir en el genesis.json"
-  
-  read -p "Introduce la dirección de Metamask (formato 0x...): " account1
-  
-  # Validar formato de dirección Ethereum
-  if ! [[ "$account1" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
-    print_error "La dirección debe tener el formato 0x seguido de 40 caracteres hexadecimales."
-    get_metamask_account
-    return
-  fi
-  
-  print_message "Cuenta de Metamask registrada correctamente."
-}
-
 # Crear directorio para el nodo y generar su clave
 create_node_directory() {
   local node_num=$1
@@ -107,12 +91,11 @@ create_node_directory() {
 create_genesis_file() {
   print_message "Creando archivo genesis.json..."
   
-  # Obtener la dirección del primer nodo para el extradata
+  # Obtener la dirección del primer nodo para el extradata y alloc
   NODE1_ADDRESS=$(cat node1/address)
   NODE1_ADDRESS_STRIP=$(echo "$NODE1_ADDRESS" | tail -n 1 | sed 's/0x//')
   
   # Crear el extradata con la dirección del primer nodo
-  # El formato es: 0x + 32 bytes de ceros + 20 bytes de la dirección + 65 bytes de ceros
   EXTRADATA="0x0000000000000000000000000000000000000000000000000000000000000000${NODE1_ADDRESS_STRIP}0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
   
   # Crear el archivo genesis.json
@@ -131,11 +114,8 @@ create_genesis_file() {
   "gasLimit": "0x1fffffffffffff",
   "difficulty": "0x1",
   "alloc": {
-    "${account1}": {
-      "balance": "0x2000000000000000000000000000"
-    },
-    "${account2}": {
-      "balance": "0x1000000000000000000000000000"
+    "${NODE1_ADDRESS}": {
+      "balance": "0x21e19e0c9bab2400000"
     }
   }
 }
@@ -319,9 +299,116 @@ show_network_info() {
     local port=$((10000 + i))
     print_message "- Fullnode $i: http://localhost:$port"
   done
-  
-  print_message "Enode del nodo validador: $ENODE_FINAL"
 }
+
+# Verificar dependencias adicionales
+check_additional_dependencies() {
+  if ! command -v jq &> /dev/null; then
+    print_error "El comando 'jq' no está instalado. Por favor, instálalo con 'sudo apt-get install jq' o el equivalente en tu sistema."
+    exit 1
+  fi
+}
+
+wei_to_eth() {
+    local wei_hex=$1
+    # Convertir de hex a decimal
+    local wei_dec=$((wei_hex))
+    # Convertir de wei a ETH (1 ETH = 10^18 wei)
+    printf "%.18f" $(echo "$wei_dec/1000000000000000000" | bc -l)
+}
+
+get_balance() {
+    local address=$1
+    local balance_hex=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'"$address"'", "latest"],"id":1}' http://localhost:10001 | jq -r '.result')
+    
+    if [[ $balance_hex == null || $balance_hex == "0x0" ]]; then
+        echo "0.000000000000000000"
+    else
+        # Eliminar el prefijo '0x' si está presente
+        balance_hex=${balance_hex#0x}
+        
+        # Convertir de hex a decimal usando bc con precisión adecuada
+        # Importante: usar mayúsculas para los dígitos hexadecimales
+        local wei_dec=$(echo "ibase=16; ${balance_hex^^}" | bc)
+        
+        # Convertir de wei a ETH (1 ETH = 10^18 wei)
+        # Usar escala 18 para mantener la precisión completa
+        echo "scale=18; ${wei_dec} / 1000000000000000000" | bc | sed 's/^\./0./'
+    fi
+}
+
+handle_transactions() {
+    print_message "Iniciando el manejador de transacciones..."
+    
+    # Obtener la dirección del nodo validador
+    local validator_address=$(cat node1/address)
+    
+    # Verificar que la cuenta del validador tenga fondos
+    local validator_balance=$(get_balance $validator_address)
+    print_message "Balance actual de la cuenta del validador ($validator_address): $validator_balance ETH"
+    
+    while true; do
+        read -p "¿Quieres realizar una transacción? (s/n): " do_transaction
+        if [[ $do_transaction != "s" ]]; then
+            print_message "Saliendo del manejador de transacciones."
+            return
+        fi
+        
+        read -p "Introduce la dirección de destino: " to_address
+        
+        # Validar formato de dirección Ethereum
+        if ! [[ "$to_address" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+            print_error "La dirección debe tener el formato 0x seguido de 40 caracteres hexadecimales."
+            continue
+        fi
+        
+        read -p "Introduce la cantidad a enviar (en ETH): " amount_eth
+        
+        # Validar que la cantidad sea un número
+        if ! [[ "$amount_eth" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+            print_error "Por favor, introduce un número válido."
+            continue
+        fi
+        
+        # Convertir ETH a wei (hexadecimal) para la transacción
+        local amount_wei_dec=$(echo "$amount_eth * 1000000000000000000" | bc | sed 's/\..*$//')
+        local amount_wei=$(echo "obase=16; $amount_wei_dec" | bc)
+        local amount_wei_hex="0x${amount_wei}"
+        
+        print_message "Enviando $amount_eth ETH ($amount_wei_hex wei) a $to_address..."
+        
+        # Enviar la transacción
+        local tx_result=$(curl -s -X POST --data '{
+            "jsonrpc":"2.0",
+            "method":"eth_sendRawTransaction",
+            "params":[{
+                "from": "'$validator_address'",
+                "to": "'$to_address'",
+                "value": "'$amount_wei_hex'"
+            }],
+            "id":1
+        }' http://localhost:10001)
+        
+        local tx_hash=$(echo $tx_result | jq -r '.result')
+        local error=$(echo $tx_result | jq -r '.error.message')
+        
+        if [[ "$tx_hash" == "null" ]]; then
+            print_error "Error al enviar la transacción: $error"
+            continue
+        fi
+        
+        print_message "Transacción enviada. Hash: $tx_hash"
+        print_message "Esperando a que la transacción se procese (10 segundos)..."
+        sleep 10 # Esperar a que la transacción se procese
+        
+        local new_from_balance=$(get_balance $validator_address)
+        local new_to_balance=$(get_balance $to_address)
+        print_message "Nuevo balance de la cuenta del validador ($validator_address): $new_from_balance ETH"
+        print_message "Nuevo balance de la cuenta destino ($to_address): $new_to_balance ETH"
+    done
+}
+
+
 
 # Función principal
 main() {
@@ -329,15 +416,13 @@ main() {
   
   # Verificar dependencias
   check_dependencies
+  check_additional_dependencies
   
   # Crear red Docker
   create_docker_network
   
   # Obtener número de nodos
   get_node_count
-  
-  # Obtener cuenta de Metamask
-  get_metamask_account
   
   # Crear directorios y claves para cada nodo
   for i in $(seq 1 $node_count); do
@@ -359,6 +444,9 @@ main() {
   
   # Mostrar información de la red
   show_network_info $node_count
+
+  # Manejar transacciones
+  handle_transactions
 }
 
 # Ejecutar la función principal
