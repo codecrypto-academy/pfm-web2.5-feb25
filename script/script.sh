@@ -322,7 +322,7 @@ get_balance() {
     local balance_hex=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'"$address"'", "latest"],"id":1}' http://localhost:10001 | jq -r '.result')
     
     if [[ $balance_hex == null || $balance_hex == "0x0" ]]; then
-        echo "0.000000000000000000"
+        echo "0.00"
     else
         # Eliminar el prefijo '0x' si está presente
         balance_hex=${balance_hex#0x}
@@ -331,17 +331,70 @@ get_balance() {
         # Importante: usar mayúsculas para los dígitos hexadecimales
         local wei_dec=$(echo "ibase=16; ${balance_hex^^}" | bc)
         
-        # Convertir de wei a ETH (1 ETH = 10^18 wei)
-        # Usar escala 18 para mantener la precisión completa
-        echo "scale=18; ${wei_dec} / 1000000000000000000" | bc | sed 's/^\./0./'
+        # Guardar la configuración de locale actual
+        local old_lc_numeric=$LC_NUMERIC
+        
+        # Establecer el locale a C para asegurar que se use el punto como separador decimal
+        export LC_NUMERIC=C
+        
+        # Convertir de wei a ETH (1 ETH = 10^18 wei) y limitar a 2 decimales
+        local result=$(printf "%.2f" $(echo "scale=18; ${wei_dec} / 1000000000000000000" | bc))
+        
+        # Restaurar la configuración de locale
+        export LC_NUMERIC=$old_lc_numeric
+        
+        echo $result
     fi
 }
 
 handle_transactions() {
     print_message "Iniciando el manejador de transacciones..."
     
+    # Crear un script temporal de Node.js para firmar transacciones
+    cat > sign_tx.js << 'EOL'
+const { Transaction } = require('@ethereumjs/tx');
+const { Common } = require('@ethereumjs/common');
+const { bufferToHex, toBuffer } = require('ethereumjs-util');
+
+// Obtener argumentos de la línea de comandos
+const privateKey = process.argv[2];
+const nonce = process.argv[3];
+const to = process.argv[4];
+const value = process.argv[5];
+const gasPrice = process.argv[6] || '0x3B9ACA00'; // 1 Gwei por defecto
+const gasLimit = process.argv[7] || '0x5208';     // 21000 por defecto
+const chainId = parseInt(process.argv[8]) || 4004; // ChainID por defecto
+
+// Crear un objeto Common para la cadena personalizada
+const common = Common.custom({ chainId: chainId });
+
+// Crear la transacción
+const txData = {
+  nonce: nonce,
+  gasPrice: gasPrice,
+  gasLimit: gasLimit,
+  to: to,
+  value: value,
+  data: '0x',
+};
+
+// Crear y firmar la transacción
+const tx = Transaction.fromTxData(txData, { common });
+const privateKeyBuffer = toBuffer(privateKey.startsWith('0x') ? privateKey : '0x' + privateKey);
+const signedTx = tx.sign(privateKeyBuffer);
+
+// Obtener la transacción serializada
+const serializedTx = bufferToHex(signedTx.serialize());
+console.log(serializedTx);
+EOL
+
+    # Instalar las dependencias necesarias para el script
+    npm init -y > /dev/null 2>&1
+    npm install --save-dev @ethereumjs/tx@^4.0.0 @ethereumjs/common@^3.0.0 ethereumjs-util@^7.1.5
+    
     # Obtener la dirección del nodo validador
     local validator_address=$(cat node1/address)
+    local private_key=$(cat node1/key | sed 's/^0x//')  # Leer la clave privada y eliminar el prefijo 0x si existe
     
     # Verificar que la cuenta del validador tenga fondos
     local validator_balance=$(get_balance $validator_address)
@@ -351,6 +404,7 @@ handle_transactions() {
         read -p "¿Quieres realizar una transacción? (s/n): " do_transaction
         if [[ $do_transaction != "s" ]]; then
             print_message "Saliendo del manejador de transacciones."
+            rm sign_tx.js # Limpiar el script temporal
             return
         fi
         
@@ -370,29 +424,35 @@ handle_transactions() {
             continue
         fi
         
-        # Convertir ETH a wei (hexadecimal) para la transacción
+        # Convertir ETH a wei (hex) para la transacción
         local amount_wei_dec=$(echo "$amount_eth * 1000000000000000000" | bc | sed 's/\..*$//')
-        local amount_wei=$(echo "obase=16; $amount_wei_dec" | bc)
-        local amount_wei_hex="0x${amount_wei}"
+        local amount_wei_hex=$(printf "0x%x" $amount_wei_dec)
         
-        print_message "Enviando $amount_eth ETH ($amount_wei_hex wei) a $to_address..."
+        print_message "Enviando $amount_eth ETH ($amount_wei_dec wei) a $to_address..."
         
-        # Enviar la transacción
+        # Obtener el nonce para la transacción
+        local nonce_hex=$(curl -s -X POST --data '{
+            "jsonrpc":"2.0",
+            "method":"eth_getTransactionCount",
+            "params":["'$validator_address'", "latest"],
+            "id":1
+        }' http://localhost:10001 | jq -r '.result')
+        
+        # Firmar la transacción usando el script de Node.js
+        local signed_tx=$(node sign_tx.js "$private_key" "$nonce_hex" "$to_address" "$amount_wei_hex")
+        
+        # Enviar la transacción firmada
         local tx_result=$(curl -s -X POST --data '{
             "jsonrpc":"2.0",
             "method":"eth_sendRawTransaction",
-            "params":[{
-                "from": "'$validator_address'",
-                "to": "'$to_address'",
-                "value": "'$amount_wei_hex'"
-            }],
+            "params":["'$signed_tx'"],
             "id":1
         }' http://localhost:10001)
         
         local tx_hash=$(echo $tx_result | jq -r '.result')
         local error=$(echo $tx_result | jq -r '.error.message')
         
-        if [[ "$tx_hash" == "null" ]]; then
+        if [[ "$tx_hash" == "null" && "$error" != "null" ]]; then
             print_error "Error al enviar la transacción: $error"
             continue
         fi
@@ -406,6 +466,9 @@ handle_transactions() {
         print_message "Nuevo balance de la cuenta del validador ($validator_address): $new_from_balance ETH"
         print_message "Nuevo balance de la cuenta destino ($to_address): $new_to_balance ETH"
     done
+    
+    # Limpiar el script temporal
+    rm sign_tx.js
 }
 
 
