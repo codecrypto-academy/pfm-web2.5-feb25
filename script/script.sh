@@ -426,7 +426,8 @@ EOL
         
         # Convertir ETH a wei (hex) para la transacción
         local amount_wei_dec=$(echo "$amount_eth * 1000000000000000000" | bc | sed 's/\..*$//')
-        local amount_wei_hex=$(printf "0x%x" $amount_wei_dec)
+        local amount_wei_hex=$(echo "obase=16; $amount_wei_dec" | bc)
+        amount_wei_hex="0x${amount_wei_hex}"
         
         print_message "Enviando $amount_eth ETH ($amount_wei_dec wei) a $to_address..."
         
