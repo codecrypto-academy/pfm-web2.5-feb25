@@ -88,5 +88,5 @@ The application will be available at [http://localhost:3000](http://localhost:30
 
 ## Usage
 
-The application allows users to register, log in, and add a series of products to a cart for purchase through a payment gateway. It follows an API-based approach to manage user interactions and the database.
+The application allows to launch a private network based on Hyperledger Besu with PoA Clique protocol. It also allows users to make transactions between different wallets, get balances and provide tokens from provider.
 
