@@ -1,110 +1,125 @@
 # Hyperledger Besu Network Setup Script
 
-Este script en Bash automatiza la configuración de una red blockchain utilizando **Hyperledger Besu**. Crea una red personalizada con validadores y fullnodes, configurando archivos necesarios, ejecutando contenedores Docker y generando claves de nodos.
+This Bash script automates the setup of a blockchain network using Hyperledger Besu. It creates a custom network with validators and full nodes, configuring necessary files, running Docker containers, and generating node keys.
 
-## Requisitos
+## Requirements
 
-### Dependencias
+### Dependencies
 
-1. **Docker**: Asegúrate de que Docker esté instalado y configurado.
-2. **Hyperledger Besu**: Descárgalo desde el [sitio oficial de Hyperledger Besu](https://besu.hyperledger.org/).
-3. **Cuenta Metamask**: Proporciona una dirección válida en formato `0x...`.
+1. **Docker**: Ensure Docker is installed and configured.
+2. **Hyperledger Besu**: Download it from the [official Hyperledger Besu website](https://besu.hyperledger.org/).
+3. **jq**: A command-line tool for processing JSON.
+4. **bc**: Arbitrary-precision calculator for mathematical operations.
+5. **Metamask Account**: Provide a valid address in the`0x...` format.
 
-### Permisos
+### Permissions
 
-Este script puede requerir permisos de administrador para ejecutar comandos relacionados con Docker.
+This script may require administrator privileges to execute Docker-related commands.
 
-## Instalación
+## Installation
 
-1. **Clona el repositorio o descarga el script**.
-2. Asegúrate de que el archivo tiene permisos de ejecución:
+1. **Clone the repository or download the script.**.
+2. Ensure the file has execution permissions:
 
    ```bash
    chmod +x script.sh
    ```
 
-3. Ejecuta el script:
+3. Run the script:
    ```bash
    ./script.sh
    ```
 
-## Funcionalidades Principales
+## Main Features
 
-### 1. Verificación de Dependencias
+### Dependency Verification
 
-El script valida la instalación de Docker y Hyperledger Besu antes de proceder.
+The script checks for the installation of Docker, Hyperledger Besu, and jq before proceeding.
 
-### 2. Creación de Red Docker
+### Docker Network Creation
 
-Crea una red Docker llamada `besu` para la comunicación entre los nodos.
+Creates a Docker network named besu for communication between nodes.
 
-### 3. Configuración de Nodos
+### Node Configuration
 
-- Solicita el número de nodos a crear, asegurándose de que al menos se cree un nodo validador.
-- Genera claves y direcciones para cada nodo.
+- Prompts for the number of nodes to create, ensuring at least one validator node is created.
+- Generates keys and addresses for each node.
 
-### 4. Archivo `genesis.json`
+### `genesis.json` File
 
-Crea un archivo `genesis.json` personalizado con:
+Creates a custom `genesis.json` file with:
 
-- Un `chainID` único.
-- Configuración de consenso Clique.
-- Inclusión de cuentas Metamask con fondos predefinidos.
+- A unique `chainID`.
+- Clique consensus configuration.
+- Predefined fund allocation to the validator node's account.
 
-### 5. Configuración de Validadores y Fullnodes
+### Validator and Full Node Configuration
 
-- Genera archivos `config.toml` y `config-fullnode.toml` para los nodos.
-- Configura nodos validadores y fullnodes con los puertos y parámetros necesarios.
+- Generates `config.toml` and `config-fullnode.toml` files for nodes.
+- Configures validator and full nodes with necessary ports and parameters.
 
-### 6. Lanzamiento de Nodos
+### Node Launching
 
-- Inicia los contenedores Docker para todos los nodos.
-- Obtiene la información `enode` del nodo validador.
+- Starts Docker containers for all nodes.
+- Retrieves the `enode` information of the validator node.
 
-### 7. Información de la Red
+### Network Information
 
-Al finalizar, muestra:
+Upon completion, displays:
 
-- La cantidad total de nodos.
-- Las URLs para acceder a los nodos.
-- La cuenta Metamask registrada.
-- El `enode` del nodo validador.
+- The total number of nodes.
+- URLs to access the nodes
+- The `enode` of the validator node.
 
-## Uso Interactivo
+## Output
 
-El script es interactivo y solicita la siguiente información:
+After executing the script, you will have:
 
-1. **Número de nodos**: Incluyendo validadores y fullnodes.
-2. **Cuenta Metamask**: Dirección válida para asignar balance inicial en el `genesis.json`.
+- A functional Hyperledger Besu network with validators and full nodes.
+- Configuration files (`genesis.json`, `config.toml`, `config-fullnode.toml`).
+- Running Docker containers.
+- Access information for nodes and network configuration details.
 
-## Salida
+## Transaction Handler
 
-Al ejecutar el script, obtendrás:
+Once the network is launched:
 
-1. Una red Hyperledger Besu funcional con validadores y fullnodes.
-2. Archivos de configuración (`genesis.json`, `config.toml`, `config-fullnode.toml`).
-3. Contenedores Docker en ejecución.
-4. Información de acceso a los nodos y configuración de la red.
+- Install Node.js.
+- Generate the `sign_tx.js` file to sign transactions.
 
-## Estructura del Proyecto
+## Interactive Usage
 
-- `script.sh`: El script principal.
-- Directorios creados para cada nodo, que contienen claves y datos de configuración.
-- Archivos de configuración generados:
+The script is interactive and prompts for the following information:
+
+- **Number of Nodes**: Including validators and full nodes.
+- **Initial Balance**: Displays the initial balance loaded into the validator node's account from `genesis.json`.
+- **Perform a Transaction**: Allows sending a transaction from the validator node's account, acting as a faucet.
+- **Metamask Account**: Address to send funds to.
+- **Transaction Hash**: Once completed.
+- **Updated Balances**: Displays updated balances for both the origin (validator node) and destination addresses after the transaction.
+
+## Project Structure
+
+- `script.sh`: The main script.
+- Directories created for each node, containing keys and configuration data.
+- Generated configuration files:
   - `genesis.json`
-  - `config.toml` (para validadores)
-  - `config-fullnode.toml` (para fullnodes)
+  - `config.toml` (for validators)
+  - `config-fullnode.toml` (for full nodes)
+- Transaction handler:
+  - `package.json` y `package-lock.json` with EthereumJS dependencies
+  - `node_modules`
+  - `sign_tx.js` to sign transactions
 
-## Problemas Comunes
+## Common Issues
 
-1. **Docker no instalado**: Asegúrate de instalar Docker.
-2. **Hyperledger Besu no encontrado**: Añade Besu a tu PATH.
-3. **Error en la dirección de Metamask**: Proporciona una dirección Ethereum válida.
+- **Docker Not Installed**: Ensure Docker is installed on your system.
+- **Hyperledger Besu Not Found**: Add Besu to your PATH environment variable.
 
-## Licencia
+## License
 
-Este proyecto está bajo una licencia abierta. Siéntete libre de adaptarlo y mejorarlo según tus necesidades.
+This project is open-source. Feel free to adapt and improve it according to your needs.
 
 ---
 
-Para más información sobre Hyperledger Besu, visita la [documentación oficial](https://besu.hyperledger.org/).
+For more information about Hyperledger Besu, visit the [official documentation](https://besu.hyperledger.org/).
