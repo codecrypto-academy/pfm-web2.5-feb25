@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Variables Initialization 
+# Variables initialization 
 NETWORKNAME="besuClique"
 NODE1="Node1"
 NODE2="Node2"
@@ -48,36 +48,7 @@ GENESIS="{
   }
 }"
 
-# Parse arguments
-for i in "$@"; do
-  case $i in
-    -n=*|--network=*)
-      NETWORKNAME="${i#*=}"
-      shift
-      ;;
-    -a|--auto)
-      NETWORKNAME=$(date +%s | md5sum | head -c 8)
-      shift 
-      ;;
-    -*|--*|-h|--help)
-      echo "Script Besu (Clique) 0.0.1 ( https://script.org )"
-      echo ""
-      echo "Usage:" 
-      echo "  ./script.sh -n|--network={name}"
-      echo ""
-      echo "You can also use --auto to use auto generated network name value"
-      echo "  ./script.sh -a|--auto"
-      echo ""
-      echo "Example:" 
-      echo "  ./script.sh -n=Foo"
-      echo ""
-      exit 1
-      ;;
-    *)
-      ;;
-  esac
-done
-
+echo ""
 echo "Hyperledger Besu Network script v.0.0.1 started"
 echo ""
 echo "-------------------------------------------"
@@ -89,6 +60,23 @@ for i in {0..2}; do
   echo "    Node$((i+1)) Port P2P      = ${PORTS_P2P[i]}"
 done
 echo "-------------------------------------------"
+
+# Delete all previous network data and containers
+echo ""
+echo "Deleting previous network data and containers"
+if [ -d ./$NETWORKNAME ]; then
+  echo "  Deleting $NETWORKNAME folder"
+  rm -rf ./$NETWORKNAME
+fi
+wait
+RESP=$(docker stop $NETWORKNAME-$NODE1 $NETWORKNAME-$NODE2 $NETWORKNAME-$NODE3)
+wait
+sleep 3
+RESP=$(docker rm $NETWORKNAME-$NODE1 $NETWORKNAME-$NODE2 $NETWORKNAME-$NODE3)
+wait
+sleep 3
+RESP=$(docker network rm $NETWORKNAME)
+wait
 
 # Folder structure creation
 echo ""
@@ -105,11 +93,11 @@ for NODE in $NODE1 $NODE2 $NODE3; do
 done
 echo "-------------------------------------------"
 
+# Check if Docker is installed and running
 echo ""
 echo "Docker containers creation"
 echo "-------------------------------------------"
 
-# Check if Docker is installed and running
 if ! command -v docker &> /dev/null; then
     echo "Docker is not installed. Please, install it first."
     exit 1
@@ -143,17 +131,16 @@ NETWORKRESP=$(docker network create $NETWORKNAME)
 wait
 echo "$NETWORKRESP created"
 
+# Running NODE1
 echo ""
 echo "Starting $NODE1 Docker container"
-
-# Running NODE1
 NODE1DOCKER=$(docker run -d --name $NETWORKNAME-$NODE1 --network $NETWORKNAME -v ./$NETWORKNAME/$NODE1/data:/data -v ./$NETWORKNAME:/config -p ${PORTS_JSON[0]}:8545 -p ${PORTS_WS[0]}:8546 -p ${PORTS_P2P[0]}:30303 hyperledger/besu:latest --data-path=/data --genesis-file=/config/cliqueGenesis.json --network-id $NETWORKNUMBER --rpc-http-enabled --rpc-http-api=ETH,NET,CLIQUE,WEB3,ADMIN --host-allowlist="*" --rpc-http-cors-origins="all" --profile=ENTERPRISE)
 wait
 echo "$NODE1 created ${NODE1DOCKER}"
 echo "Waiting for the node internal deploy"
 sleep 10
 
-# Getting NODE1 internal IP
+# Getting NODE1 internal IP and Enode
 NODE1IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $NETWORKNAME-$NODE1)
 echo "  $NETWORKNAME-$NODE1 IP: $NODE1IP"
 ENODE=$(docker logs $NETWORKNAME-$NODE1 | grep "enode" | grep -o 'enode://[^ ]*@')
@@ -174,9 +161,13 @@ NODE3DOCKER=$(docker run -d --name $NETWORKNAME-$NODE3 --network $NETWORKNAME -v
 echo "$NODE3 created ${NODE3DOCKER}"
 wait
 echo "-------------------------------------------"
-sleep 10
+sleep 5
 
 # Testing transactions
-
+echo ""
+echo "Testing transactions"
+echo "-------------------------------------------"
+node ./dist/index.js 0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C
+echo "-------------------------------------------"
 echo ""
 echo "Script execution finished."

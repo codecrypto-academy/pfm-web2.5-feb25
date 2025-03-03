@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "npx tsc && node dist/index.js",
-    "debug": "npx tsc && node --inspect dist/index.js",
+    "start": "npx tsc && node --inspect dist/index.js",
     "test": "npx tsc && mocha"
   },
   "keywords": [],
@@ -12,7 +11,6 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@types/node": "^22.13.5",
-    "mocha": "^11.1.0"
+    "@types/node": "^22.13.5"
   }
 }

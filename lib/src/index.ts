@@ -1,15 +1,18 @@
 import { exec } from 'child_process';
 import fs from 'fs';
 
-type TypeNode = {
+interface Node {
   name: string;
   portJSON: number;
   portWS: number;
   portP2P: number;
   address?: string;
+  dockerId?: string;
+  dockerIP?: string;
+  enode?: string;
 }
 
-const defaultNodes: TypeNode[] = [
+const defaultNodes: Node[] = [
   {
     name: 'Node-1',
     portJSON: 8545,
@@ -34,7 +37,7 @@ export class BesuClique {
   private version: string;
   private networkName: string;
   private networkId: number = 123;
-  private nodes: TypeNode[];
+  private nodes: Node[];
 
   private genReplaceText = "<Node 1 Address>";
   private baseGenesis: string = `{
@@ -73,7 +76,7 @@ export class BesuClique {
 }`;
 
 
-  constructor(version: string = '1.0.0', networkName: string = 'besuClique', nodes: TypeNode[] = defaultNodes) {
+  constructor(version: string = '1.0.0', networkName: string = 'besuClique', nodes: Node[] = defaultNodes) {
     this.version = version;
     this.networkName = networkName;
     this.nodes = nodes;
@@ -92,7 +95,7 @@ export class BesuClique {
     return this.networkName;
   }
 
-  addNode(node: TypeNode): string {
+  addNode(node: Node): string {
     if (this.nodes.find(n => n.name === node.name)) {
       // throw new Error('Node already exists');
       return 'Node already exists';
@@ -105,11 +108,11 @@ export class BesuClique {
     this.nodes = this.nodes.filter(node => node.name !== nodeName);
   }
 
-  getNode(nodeName: string): TypeNode | undefined {
+  getNode(nodeName: string): Node | undefined {
     return this.nodes.find(node => node.name === nodeName);
   }
 
-  getNodes(): TypeNode[] {
+  getNodes(): Node[] {
     return this.nodes;
   }
   
@@ -174,7 +177,7 @@ export class BesuClique {
     });
   }
 
-  getNodeAddress(node: TypeNode): Promise<TypeNode> {
+  getNodeDockerIP(node: Node): Promise<Node> {
     return new Promise(async (resolve, reject) => {
       try {
         exec(`docker inspect '${this.networkName}-${node.name}'`, (error, stdout, stderr) => {
@@ -185,9 +188,9 @@ export class BesuClique {
           }
     
           const nodeInfo = JSON.parse(stdout);
-          if (typeof nodeInfo[0].Id == 'string') {
+          if (typeof nodeInfo[0]?.NetworkSettings?.Networks?.[this.networkName]?.IPAddress == 'string') {
             let updatedNode = node;
-            updatedNode.address = nodeInfo[0].Id;
+            updatedNode.dockerIP = nodeInfo[0]?.NetworkSettings?.Networks?.[this.networkName]?.IPAddress;
             resolve(updatedNode);
           } else {
             resolve(node);
@@ -199,15 +202,63 @@ export class BesuClique {
     });
   }
 
-  async createNodeMaster(node: TypeNode): Promise<TypeNode> {
+  getNodeDockerId(node: Node): Promise<Node> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        exec(`docker inspect '${this.networkName}-${node.name}'`, (error, stdout, stderr) => {
+          if (error) {
+            resolve(node);
+          } if (stderr) {
+            resolve(node);
+          }
+    
+          const nodeInfo = JSON.parse(stdout);
+          if (typeof nodeInfo[0]?.Id == 'string') {
+            let updatedNode = node;
+            updatedNode.dockerId = nodeInfo[0]?.Id;
+            resolve(updatedNode);
+          } else {
+            resolve(node);
+          }
+        })
+      } catch (error) {
+        resolve (node)
+      }
+    });
+  }
+
+  getNodeEnode(node: Node): Promise<Node> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        exec(`docker logs '${this.networkName}-${node.name}' | grep "enode" | grep -o 'enode://[^ ]*@'`, (error, stdout, stderr) => {
+          if (error) {
+            resolve(node);
+          } if (stderr) {
+            resolve(node);
+          }
+
+          let updatedNode = node;
+          if (stdout.includes('\n')) {
+            stdout = stdout.replace('\n', '');
+          }
+          updatedNode.enode = stdout;
+          resolve(updatedNode);
+        })
+      } catch (error) {
+        resolve (node)
+      }
+    });
+  }
+
+  async createNodeMaster(node: Node): Promise<Node> {
     return new Promise(async (resolve, reject) => {
       try {
         let updatedNode = node;
 
-        exec(`docker run -d --name ${this.networkName}-${node.name} --network ${this.networkName} -v ./${this.networkName}/${node.name}/data:/data -v ./${this.networkName}:/config -p ${node.portJSON}:8545 -p ${node.portWS}:8546 -p ${node.portP2P}:30303 hyperledger/besu:latest --data-path=/data --genesis-file=/config/cliqueGenesis.json --network-id ${this.networkId} --rpc-http-enabled --rpc-http-api=ETH,NET,CLIQUE,WEB3,ADMIN --host-allowlist="*" --rpc-http-cors-origins="all" --profile=ENTERPRISE`, (error, stdout, stderr) => async () => {
+        exec(`docker run -d --name ${this.networkName}-${node.name} --network ${this.networkName} -v ./${this.networkName}/${node.name}/data:/data -v ./${this.networkName}:/config -p ${node.portJSON}:8545 -p ${node.portWS}:8546 -p ${node.portP2P}:30303 hyperledger/besu:latest --data-path=/data --genesis-file=/config/cliqueGenesis.json --network-id ${this.networkId} --rpc-http-enabled --rpc-http-api=ETH,NET,CLIQUE,WEB3,ADMIN --host-allowlist="*" --rpc-http-cors-origins="all" --profile=ENTERPRISE`, async (error, stdout, stderr) => {
           if (error) {
             if (error.message.includes('already in use')) {
-              updatedNode = await this.getNodeAddress(node);
+              updatedNode = await this.getNodeDockerId(node);
               resolve(updatedNode);
             } else {
               reject(new Error('Error creating node'));
@@ -215,7 +266,7 @@ export class BesuClique {
           }
           if (stderr) {
             if (stderr.includes('already in use')) {
-              updatedNode = await this.getNodeAddress(node);
+              updatedNode = await this.getNodeDockerId(node);
               resolve(updatedNode);
             } else {
               reject(new Error('Error creating node'));
@@ -231,7 +282,108 @@ export class BesuClique {
     });
   }
 
-  async createAddress(node: TypeNode): Promise<string> {
+  async createNodeSlave(node: Node, enode: string): Promise<Node> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const updatedNode = node;
+
+        exec(`docker run -d --name ${this.networkName}-${node.name} --network ${this.networkName} -v ./${this.networkName}/${node.name}/data:/data -v ./${this.networkName}:/config -p ${node.portJSON}:8545 -p ${node.portWS}:8546 -p ${node.portP2P}:30303 hyperledger/besu:latest --data-path=/data --genesis-file=/config/cliqueGenesis.json --bootnodes=${enode} --network-id ${this.networkId} --rpc-http-enabled --rpc-http-api=ETH,NET,CLIQUE,WEB3,ADMIN --host-allowlist="*" --rpc-http-cors-origins="all" --profile=ENTERPRISE`, async (error, stdout, stderr) => {
+          if (error) {
+            if (error.message.includes('already in use')) {
+              const node1 = await this.getNodeDockerId(node);
+              if (node1.dockerId) {
+                updatedNode.dockerId = node1.dockerId;
+              }
+              resolve(updatedNode);
+            } else {
+              reject(new Error('Error creating node'));
+            }
+          }
+          if (stderr) {
+            if (stderr.includes('already in use')) {
+              const node1 = await this.getNodeDockerId(node);
+              if (node1.dockerId) {
+                updatedNode.dockerId = node1.dockerId;
+              }
+              resolve(updatedNode);
+            } else {
+              reject(new Error('Error creating node'));
+            }
+          }
+
+          updatedNode.address = stdout;
+          resolve(updatedNode);
+        })
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async startNode(node: Node): Promise<string> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const updatedNode = node;
+
+        exec(`docker start ${this.networkName}-${node.name}`, async (error, stdout, stderr) => {
+          if (error) {
+            resolve(error.message);
+          }
+          if (stderr) {
+            resolve(stderr);
+          }
+
+          resolve('Node stopped');
+        })
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async stopNode(node: Node): Promise<string> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const updatedNode = node;
+
+        exec(`docker stop ${this.networkName}-${node.name}`, async (error, stdout, stderr) => {
+          if (error) {
+            resolve(error.message);
+          }
+          if (stderr) {
+            resolve(stderr);
+          }
+
+          resolve('Node stopped');
+        })
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async deleteNode(node: Node): Promise<string> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const updatedNode = node;
+
+        exec(`docker stop ${this.networkName}-${node.name}`, async (error, stdout, stderr) => {
+          if (error) {
+            resolve(error.message);
+          }
+          if (stderr) {
+            resolve(stderr);
+          }
+
+          resolve('Node stopped');
+        })
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async createAddress(node: Node): Promise<string> {
     return new Promise(async (resolve, reject) => {
       exec(`docker run --rm -v ./${this.networkName}/${node.name}/data:/data hyperledger/besu:latest --data-path=/data public-key export-address --to=/data/node1Address`, (error, stdout, stderr) => {
         if (error) {
@@ -258,6 +410,10 @@ export class BesuClique {
       return false;
     }
   }
+
+  delay(ms: number): Promise<void> {
+    return new Promise( resolve => setTimeout(resolve, ms) );
+  }
 }
 
 
@@ -265,6 +421,7 @@ export class BesuClique {
 const app = async () => {
   const besuClique = new BesuClique();
 
+  // Initializations
   console.log('Version: ', besuClique.getVersion());
   console.log('Docker: ', await besuClique.checkDocker());
 
@@ -280,8 +437,8 @@ const app = async () => {
     portP2P: 30306
   });
   console.log('Nodes: ', besuClique.getNodes());
-  besuClique.removeNode('Node-4');
-  console.log('Nodes: ', besuClique.getNodes());
+  // besuClique.removeNode('Node-4');
+  // console.log('Nodes: ', besuClique.getNodes());
 
   console.log('Node 1: ', besuClique.addNode({
     name: 'Node-1', 
@@ -289,26 +446,59 @@ const app = async () => {
     portWS: 8546, 
     portP2P: 30303
   }));
-  const address1 = await besuClique.createAddress(besuClique.getNode('Node-1')!);
-  console.log('Address 1: ', address1);
 
-  console.log('Genesis created properly: ', besuClique.createGenesis(address1));
+  // const address1 = await besuClique.createAddress(besuClique.getNode('Node-1')!);
+  // console.log('Address 1: ', address1);
 
-  const netResp = await besuClique.createNetwork();
-  if (netResp === true) {
-    console.log('Network created: ', netResp );
-  } else {
-    console.error('Error2 creating network');
-  }
+  // console.log('Genesis created properly: ', besuClique.createGenesis(address1));
+
+  // // Creating Network
+  // const netResp = await besuClique.createNetwork();
+  // if (netResp === true) {
+  //   console.log('Network created: ', netResp );
+  // } else {
+  //   console.error('Error2 creating network');
+  // }
   
-  const nodeResp = await besuClique.createNodeMaster(besuClique.getNode('Node-1')!);
-  if (nodeResp) {
-    console.log('Node created: ', nodeResp );
-  } else {
-    console.error('Error creating node');
-  }
+  // // Creating Node 1
+  // const nodeResp = await besuClique.createNodeMaster(besuClique.getNode('Node-1')!);
+  // if (nodeResp) {
+  //   console.log('Node created: ', nodeResp );
+  //   console.log('Node 1 data: ', besuClique.getNode('Node-1'));
+  // } else {
+  //   console.error('Error creating node');
+  // }
 
+  // // Getting Node1 Enode
+  // let node1 = await besuClique.getNodeDockerIP(besuClique.getNode('Node-1')!);
+  // console.log('Node 1 IP: ', node1);
 
+  // await besuClique.delay(10000);
+
+  // node1 = await besuClique.getNodeEnode(besuClique.getNode('Node-1')!);
+
+  // if (node1.dockerIP && node1.portP2P && node1.enode) {
+  //   node1.enode = node1.enode + node1.dockerIP + ':' + node1.portP2P;
+  // }
+  // console.log('Node 1 Enode: ', node1);
+
+  // // Creating Node 2
+  // const node2 = await besuClique.createNodeSlave(besuClique.getNode('Node-2')!, node1.enode!);
+  // console.log('Node 2 created: ', node2);
+
+  // // Creating Node 3
+  // const node3 = await besuClique.createNodeSlave(besuClique.getNode('Node-3')!, node1.enode!);
+  // console.log('Node 3 created: ', node3);
+
+  // // Creating Node 4
+  // const node4 = await besuClique.createNodeSlave(besuClique.getNode('Node-4')!, node1.enode!);
+  // console.log('Node 4 created: ', node4);
+
+  // besuClique.delay(5000);
+
+  console.log(await besuClique.stopNode(besuClique.getNode('Node-1')!));
+  console.log(await besuClique.stopNode(besuClique.getNode('Node-2')!));
+  console.log(await besuClique.stopNode(besuClique.getNode('Node-3')!));
 
 }
 
