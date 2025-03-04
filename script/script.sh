@@ -21,6 +21,38 @@ print_warning() {
   echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
+# Function to clean existing files and folders
+clean_existing_files() {
+  print_message "Cleaning existing files and folders..."
+  
+  # Stop and remove existing Docker containers related to Besu
+  print_message "Stopping and removing existing Docker containers..."
+  for container in $(docker ps -a --filter name=node* -q); do
+    docker stop $container &>/dev/null
+    docker rm $container &>/dev/null
+  done
+  print_message "Docker containers removed."
+  
+  # Remove configuration files
+  print_message "Removing configuration files..."
+  rm -f genesis.json config.toml config-fullnode.toml sign_tx.js package.json package-lock.json
+  print_message "Configuration files removed."
+  
+  # Remove node directories
+  print_message "Removing node directories..."
+  rm -rf node*/
+  print_message "Node directories removed"
+  
+  # Remove node_modules if it exists
+  if [ -d "node_modules" ]; then
+    print_message "Removing node_modules..."
+    rm -rf node_modules
+    print_message "node_modules removed."
+  fi
+  
+  print_message "Cleanup completed. The environment is ready for a new installation."
+}
+
 # Verify that Besu and Docker are installed
 check_dependencies() {
   print_message "Checking dependencies..."
@@ -475,11 +507,12 @@ EOL
     rm sign_tx.js
 }
 
-
-
 # Main function
 main() {
   print_message "=== Hyperledger Besu network setup script with validators and fullnodes ==="
+  
+  # Clean existing files and folders
+  clean_existing_files
   
   # Check dependencies
   check_dependencies
