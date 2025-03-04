@@ -102,15 +102,16 @@ send_raw_transaction() {
         --arg st "$signed_tx" \
         '{jsonrpc: "2.0", method: "eth_sendRawTransaction", params: [$st], id: 1}')
 
-    echo "Sending raw transaction to $rpc_url..."
+
+    echo "Sending raw transaction to $rpc_url..." >&2
     local response=$(curl -s -X POST --data "$json_rpc_request" -H "Content-Type: application/json" "$rpc_url")
     local tx_hash=$(echo "$response" | jq -r '.result')
 
     if [ "$tx_hash" != "null" ]; then
-        echo "Transaction sent successfully! Transaction hash: $tx_hash"
-        echo "$tx_hash"
+        echo "Transaction sent successfully! Transaction hash: $tx_hash" >&2
+        echo "$tx_hash"  
     else
-        echo "Failed to send transaction. Error: $(echo "$response" | jq -r '.error.message')"
+        echo "Failed to send transaction. Error: $(echo "$response" | jq -r '.error.message')" >&2
         return 1
     fi
 }
@@ -131,7 +132,7 @@ maxAttempts=30
 attempt=0
 while [ $attempt -lt $maxAttempts ]; do
     transactionReceipt=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["'$hashTx'"],"id":1}' -H "Content-Type: application/json" http://localhost:9998 | jq -r '.result')
-    if [ "$transactionReceipt" != "null" ]; then
+    if [ -n "$transactionReceipt" ] && [ "$transactionReceipt" != "null" ]; then
         echo "Transaction mined successfully!"
         break
     else

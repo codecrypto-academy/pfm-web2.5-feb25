@@ -160,7 +160,7 @@ done
 # Function to check if a node is up and running
 check_node_ready() {
     local rpc_url=$1
-    local max_attempts=3
+    local max_attempts=5
     local attempt=0
 
     echo "Checking if node at $rpc_url is ready..."
@@ -202,15 +202,15 @@ send_raw_transaction() {
         '{jsonrpc: "2.0", method: "eth_sendRawTransaction", params: [$st], id: 1}')
 
 
-    echo "Sending raw transaction to $rpc_url..."
+    echo "Sending raw transaction to $rpc_url..." >&2
     local response=$(curl -s -X POST --data "$json_rpc_request" -H "Content-Type: application/json" "$rpc_url")
     local tx_hash=$(echo "$response" | jq -r '.result')
 
     if [ "$tx_hash" != "null" ]; then
-        echo "Transaction sent successfully! Transaction hash: $tx_hash"
-        echo "$tx_hash"
+        echo "Transaction sent successfully! Transaction hash: $tx_hash" >&2
+        echo "$tx_hash"  
     else
-        echo "Failed to send transaction. Error: $(echo "$response" | jq -r '.error.message')"
+        echo "Failed to send transaction. Error: $(echo "$response" | jq -r '.error.message')" >&2
         return 1
     fi
 }
@@ -264,8 +264,9 @@ echo "Waiting for the transaction to be mined..."
 
 while true; do
     transactionReceipt=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["'$hashTx'"],"id":1}' -H "Content-Type: application/json" http://localhost:9998 | jq -r '.result')
-    echo $transactionReceipt
-    if [ "$transactionReceipt" != "null" ]; then
+    
+    #echo "transactionReceipt: $transactionReceipt"
+    if [ -n "$transactionReceipt" ] && [ "$transactionReceipt" != "null" ]; then
         echo "Transaction mined successfully!"
         break
     else
