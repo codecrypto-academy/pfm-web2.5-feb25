@@ -4,13 +4,23 @@
   "main": "index.js",
   "scripts": {
     "start": "npx tsc && node --inspect dist/index.js",
-    "test": "npx tsc && mocha"
+    "test": "npx tsc && jest"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "testEnvironment": "node",
+    "testPathIgnorePatterns": ["dist"]
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@types/node": "^22.13.5"
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.5",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.6"
   }
 }
