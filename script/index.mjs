@@ -6,6 +6,8 @@ const { ec: EC } = pkg;
 import { ethers } from "ethers";
 import { exec } from 'child_process';
 import path from 'path';
+import { randomBytes } from 'crypto';
+import { execSync } from 'child_process';
 
 async function callAPI(url, method, params) {
                 
@@ -49,7 +51,7 @@ function createKeys(ip,port){
 }
 
 async function getBalance(url, address) {
-    console.log("Entra en getBalance()")
+    //console.log("Entra en getBalance()")
     try{
         const data = await callAPI(url,"eth_getBalance", [address,"latest"]);
         return BigInt(data.result);
@@ -116,6 +118,80 @@ function deleteAllNodeFolders(networkName) {
     }
 }
 
+function generateNetworkName() {
+    const randomHex = randomBytes(4).toString('hex');
+    return `red-${randomHex}`;
+}
+
+async function executeCommand(command) {
+    return new Promise((resolve, reject) => {
+        console.log(`EJECUTANDO COMANDO: ${command}`);
+        
+        const process = exec(command, { 
+            stdio: ['pipe', 'pipe', 'pipe'],
+            shell: true 
+        }, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error ejecutando comando: ${command}`, error);
+                console.error('STDERR:', stderr);
+                reject(error);
+            } else {
+                console.log('STDOUT:', stdout);
+                resolve(stdout);
+            }
+        });
+
+        // Asegurar que se muestren todos los streams
+        process.stdout.on('data', (data) => {
+            console.log('STDOUT DATA:', data.toString().trim());
+        });
+
+        process.stderr.on('data', (data) => {
+            console.error('STDERR DATA:', data.toString().trim());
+        });
+    });
+}
+
+async function createMultipleNodes(numNodes = 5) {
+    //const networkName = generateNetworkName();
+    const networkName = "besu-network"
+    
+    console.log(`Creando red: ${networkName}`);
+    console.log(`Creando ${numNodes} nodos...`);
+
+    try {
+        for (let i = 1; i <= numNodes; i++) {
+            const nodeName = `nodo${i}`;
+            
+            console.log(`Creando nodo ${nodeName} en la red ${networkName}`);
+            
+            // Usar execSync para ver la salida completa
+            try {
+                const scriptOutput = execSync(`./script.sh ${networkName} ${nodeName}`, { 
+                    stdio: 'inherit',
+                    cwd: process.cwd()
+                });
+                //console.log(`Salida del script para ${nodeName}:`, scriptOutput);
+            } catch (error) {
+                console.error(`Error ejecutando script.sh para ${nodeName}:`, error);
+                throw error;
+            }
+            
+            // Retardo para inicialización
+            console.log(`Esperando unos segundos para que el nodo ${nodeName} se inicialice completamente...`);
+            await new Promise(resolve => setTimeout(resolve, 15000));
+
+            // ... resto del código anterior ...
+        }
+        
+        console.log(`Red ${networkName} creada con ${numNodes} nodos`);
+        return networkName;
+    } catch (error) {
+        console.error('Error al crear la red:', error);
+        throw error;
+    }
+}
+
 // Command line handling
 async function main() {
     const args = process.argv.slice(2);
@@ -125,8 +201,8 @@ async function main() {
         case 'create-keys':
             const ip = args[1];
             const port = args[2];
-            console.log("IP create-keys:", ip);
-            console.log("PORT create-keys:", port);
+            //console.log("IP create-keys:", ip);
+            //console.log("PORT create-keys:", port);
             if(!ip){
                 console.error('IP address required for create-keys');
                 process.exit(1);
@@ -138,7 +214,19 @@ async function main() {
             fs.writeFileSync("./address",keys.address);
             fs.writeFileSync("./enode",keys.enode);
             console.log("Keys create successfully");
-            break;
+        break;
+
+        case 'create-network':
+            const numNodes = parseInt(args[1]) || 5;  // Por defecto 5 nodos
+
+            try {
+                const networkName = await createMultipleNodes(numNodes);
+                console.log(`Red creada: ${networkName}`);
+            } catch (error) {
+                console.error('Error creating network:', error);
+                process.exit(1);
+            }
+        break;
 
         case 'network-info':
             const url = args[1];
@@ -149,14 +237,14 @@ async function main() {
         case 'balance':
             const balanceAddress = args[1];
             const urlBalance = args[2];
-            console.log('URL:', urlBalance); // Esto debería mostrar la URL recibida.
+            //console.log('URL:', urlBalance); // Esto debería mostrar la URL recibida.
 
             if (!balanceAddress) {
                 console.error('Usage: balance [url] <address>');
                 process.exit(1);
             }
             try {
-                console.log(urlBalance)
+                //console.log(urlBalance)
                 const balance = await getBalance(urlBalance, balanceAddress);
                 console.log('Balance:', ethers.formatEther(balance), 'ETH');
             } catch(error){
@@ -170,7 +258,7 @@ async function main() {
             const toAddress = args[2];
             const amount = args[3];
             const urlTransfer = args[4];    
-            console.log('URL transfer:', urlTransfer); // Esto debería mostrar la URL recibida. 
+            //console.log('URL transfer:', urlTransfer); // Esto debería mostrar la URL recibida. 
             if(!toAddress || !amount || !fromPrivateKey){
                 console.error('Usage: transfer <to-address> <amount> <from-private-key>')
                 process.exit(1);
@@ -346,9 +434,12 @@ async function main() {
         default:
             console.log(`
                 Available commands:
+                create-network <nombre-red>
                 create-keys <ip> - Create node keys for given IP address
                 network-info [url] - Get network information (defualts to http://localhost:8888)
                 transfer <fromPrivate> <to> <amount> - Transfer funds from one account to another
+                delete-network <network-name>
+                delete-node <node-name>
         `   )
         break;
             
