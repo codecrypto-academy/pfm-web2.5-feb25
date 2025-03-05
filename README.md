@@ -22,7 +22,7 @@ Con este proyecto, se profundiza en:
 Se ha desarrollado un script automatizado para iniciar múltiples nodos en la red con comandos Docker.
 
 📌 Vista del script en acción:<br>
-<img src="screens/script.png" alt="script" width="500"/>
+<img src="screens/script.png" alt="script" width="500"/><br>
 ### 🔗 Detalles en video:
 * 🎥[ProyBesu.Script Parte 1 ](https://www.loom.com/share/fd374917eff54865ae687fd43c1ada59?sid=dcad4971-9acd-4aef-8f9f-9885bc4a693e)
 * 🎥[ProyBesu.Script Parte 2 ](https://www.loom.com/share/244a1c4fb19140118f4a00d5ce6bdbf4?sid=4eb2697b-51e1-4e95-b365-149359aaac5d)
@@ -38,10 +38,10 @@ Se han desarrollado pruebas automatizadas con Jest para validar la correcta crea
 ```sh 
 npx jest test/netManager.test.ts
 ```
-<img src="screens/test.png" alt="script" width="500"/>
+<img src="screens/test.png" alt="script" width="500"/><br>
 ### 🔗 Detalles en video:
-* 🎥[ProyBesu.Lib/Test Parte 1 ](https://www.loom.com/share/de562deee4fd46eb8e5dae6bcb9c1da5?sid=4b1a4b2d-6f67-45c8-89f8-b0f9278b145a)
-* 🎥[ProyBesu.Lib/Test Parte 2 ](https://www.loom.com/share/1362437658e849ba8aeeccfbd0abcd7c?sid=777d8f50-a2a3-4205-97bf-f0b678e1cbff)
+* 🎥[ProyBesu.Lib/Test Parte 1](https://www.loom.com/share/de562deee4fd46eb8e5dae6bcb9c1da5?sid=4b1a4b2d-6f67-45c8-89f8-b0f9278b145a)
+* 🎥[ProyBesu.Lib/Test Parte 2](https://www.loom.com/share/1362437658e849ba8aeeccfbd0abcd7c?sid=777d8f50-a2a3-4205-97bf-f0b678e1cbff)
 ***
 
 ## 🚀 Cómo levantar la red desde el script
