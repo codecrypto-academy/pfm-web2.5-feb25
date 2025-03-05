@@ -34,6 +34,14 @@ Se ha implementado una librería en TypeScript que simplifica la creación y adm
 ### 3️⃣ Pruebas automatizadas para validación de nodos
 Se han desarrollado pruebas automatizadas con Jest para validar la correcta creación y configuración de la red y sus nodos.
 
+📌 Vista de las pruebas en acción:<br>
+```sh 
+npx jest test/netManager.test.ts
+```
+<img src="screens/test.png" alt="script" width="500"/>
+### 🔗 Detalles en video:
+* 🎥[ProyBesu.Lib/Test Parte 1 ](https://www.loom.com/share/de562deee4fd46eb8e5dae6bcb9c1da5?sid=4b1a4b2d-6f67-45c8-89f8-b0f9278b145a)
+* 🎥[ProyBesu.Lib/Test Parte 2 ](https://www.loom.com/share/1362437658e849ba8aeeccfbd0abcd7c?sid=777d8f50-a2a3-4205-97bf-f0b678e1cbff)
 ***
 
 ## 🚀 Cómo levantar la red desde el script
@@ -46,7 +54,7 @@ Ejecuta el siguiente comando en la terminal:
 Puedes ejecutar las pruebas unitarias de la automatización de la red con Jest:
 ```sh 
 npx jest test/netManager.test.ts
-npx jest test/countManager.test.ts
+npx jest test/accountManager.test.ts
 ```
 
 ### 📄 Notas
@@ -58,4 +66,10 @@ besu --version
 - 🔹 Deberías obtener una respuesta similar a esta:
 ```sh 
 besu/v23.10.0/linux-x86_64/openjdk-java-21
+```
+- 🔹 Puedes revisar el estado de la red y de las cuentas usando Curl, ejecutando por ejemplo:
+```sh 
+curl -X POST http://localhost:2819 
+  -H "Content-Type: application/json" \
+  --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["0x70997970C51812dc3A010C7d01b50e0d17dc79C8", "latest"],"id":1}'
 ```

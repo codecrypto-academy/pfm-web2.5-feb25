@@ -10,7 +10,7 @@ const BOOTNODE_DIR = path.join(NETWORK_DIR, "bootnode");    // Directorio donde 
 const NETWORK_NAME = "besu-network-test";
 const NETWORK = "162.24.0.0/16";
 const BOOTNODE_IP = "162.24.0.8";
-const BOOTNODE_PUERTO=2224;
+const BOOTNODE_PUERTO=2819;
 const CHAIN_ID = 110786;
 const ALLOC_ADDRESS_0X = "70997970C51812dc3A010C7d01b50e0d17dc79C8";
 
