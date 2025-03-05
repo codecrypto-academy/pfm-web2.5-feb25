@@ -1,88 +1,92 @@
-# pfm-web2.5-feb25
-Este proyecto automatiza el proceso de creación y gestión de una red blockchain utilizando Hyperledger Besu.
+# pfm-web2.5-feb25  
+This project automates the process of creating and managing a blockchain network using Hyperledger Besu.
 
-## Estructura del proyecto
-El proyecto tiene la siguiente estructura de archivos:
+## Project Structure  
+The project has the following file structure:
 
 ```
 📂 pfm-web2.5-feb25
  ├── 📂 script        
- │    └── createBESUnetwork.sh    # Script para la automatización de la creación de una red BESU
- │    └── createPrivatePublicKeys.mjs    # Script para la creación de llaves públicas y privadas
- │    └── txTest.js    # Script para realizar una transaccion de prueba
- ├── 📂 lib           # Biblioteca en TypeScript
+ │    └── createBESUnetwork.sh    # Script for automating the creation of a BESU network  
+ │    └── createPrivatePublicKeys.mjs    # Script for generating public and private keys  
+ │    └── txTest.js    # Script for performing a test transaction  
+ ├── 📂 lib           # TypeScript library  
  │    └── index.ts  
- ├── 📂 frontback     # Framework NextJS
- │    ├── 📂 src 
- │    │    └── 
- │    ...
- ├── README.md
- └── ...
+ ├── 📂 frontback     # NextJS framework  
+ │    ├── 📂 src  
+ │    │    └──  
+ │    ...  
+ ├── README.md  
+ └── ...  
 ```
-## Tecnologías usadas
 
-## Requisitos
+## Technologies Used  
 
-- **Sistema operativo**: El script está diseñado para funcionar en sistemas operativos basados en Linux y macOS (también se puede ejecutar en Windows si tienes un entorno compatible con Bash, como WSL).
-- **Dependencias**:
-  - **Node.js**
-  - **Docker**: Utilizado para la creación de contenedores y redes.
-  - **Git**: Para clonar el repositorio.
+## Requirements  
 
-## Instalación
+- **Operating System**: The script is designed to work on Linux and macOS-based systems (it can also be run on Windows if you have a Bash-compatible environment, such as WSL).  
+- **Dependencies**:  
+  - **Node.js**  
+  - **Docker**: Used for container and network creation.  
+  - **Git**: To clone the repository.  
 
-### Clonar el repositorio
+## Installation  
 
-Primero, clona el repositorio en tu máquina local:
+### Clone the Repository  
+
+First, clone the repository to your local machine:
 
 ```bash
 git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
 ```
 
-### Instalar las dependencias
+### Install Dependencies  
 
-Asegúrate de tener Docker instalado en tu sistema. Si no lo tienes, puedes seguir las instrucciones de instalación [aquí](https://docs.docker.com/get-docker/).
+Make sure you have Docker installed on your system. If you don’t have it, you can follow the installation instructions [here](https://docs.docker.com/get-docker/).  
 
-# Script
-## createBESUnetwork.sh
-El script `createBESUnetwork.sh` automatiza la creación de una red BESU (Ethereum client compatible con la red de pruebas y Mainnet).
+# Script  
+## createBESUnetwork.sh  
+The `createBESUnetwork.sh` script automates the creation of a BESU network (Ethereum client compatible with testnets and Mainnet).  
 
-### Ejecutar el script
+### Running the Script  
 
-Una vez que hayas clonado el repositorio, navega a la carpeta del proyecto y haz el script ejecutable:
+Once you have cloned the repository, navigate to the project folder and make the script executable:
 
 ```bash
 cd pfm-web2.5-feb25
 chmod +x createBESUnetwork.sh
 ```
 
-### Ejecución del script
+### Executing the Script  
 
-El script acepta los siguientes comandos
-- **createBesuNetwork** | Crea una red de BESU
-- **deleteBesuNetwork** | Elimina una red BESU !Aún no implementada
-- **addBesuNode** | Añade un nodo a una red BESU existente !Aún no implementada
-- **deleteBesuNode** | Elimina un nodo de una red BESU existente !Aún no implementada
+The script accepts the following commands:  
+- **createBesuNetwork** | Creates a BESU network  
+- **deleteBesuNetwork** | Deletes a BESU network (Not yet implemented)  
+- **addBesuNode** | Adds a node to an existing BESU network (Not yet implemented)  
+- **deleteBesuNode** | Removes a node from an existing BESU network (Not yet implemented)  
 
-#### Ejemplo de uso:
+#### Example Usage:  
 ```bash
 ./createBESUnetwork.sh createBesuNetwork
 ```
 
-### Comando createBesuNetwork
-El script solicita parámetros clave que incluyen:
+### Command createBesuNetwork  
+This command in the `createBESUnetwork.sh` script creates a Besu network using Clique PoA.  
+<img src="https://github.com/user-attachments/assets/3c7e358c-34ea-4c7e-b89c-d007edc5b056" width="400">
 
-- **Chain ID**: 
-- **Número de nodos**: La cantidad de nodos que deseas tener en la red BESU.
-- **Nombre de la red**: El nombre que deseas asignar a la red que se está creando.
-- **IP de network**: 
-- **Número de bootnodes**:
-- **directory**: El directorio donde se va a crear un directorio para la red
+The script allows you to configure the following:  
 
-### Ejemplo de uso:
+- **Chain ID**  
+- **Number of nodes**: The number of nodes you want in the BESU network.  
+- **Network name**: The name you want to assign to the network being created.  
+- **Network IP**  
+- **Number of bootnodes**  
+- **Directory**: The directory where a folder for the network will be created.  
 
-Este comando creará una red BESU llamada "TEST" con 4 nodos.
-*Video
+### Example Usage:  
 
-## createPrivatePublicKeys.mjs
+This command will create a BESU network called "TEST" with 4 nodes.  
+*Video  
+
+## createPrivatePublicKeys.mjs  
 ![CodeCrypto (1)](https://github.com/user-attachments/assets/6957b154-1bd2-4162-98c2-1815688fee51)
