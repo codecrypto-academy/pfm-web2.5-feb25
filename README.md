@@ -20,9 +20,9 @@ Welcome to the Automation and Network Management project developed with **Next.j
 ## Technologies Used
 
 - **Next.js**: A React framework for optimized web application development.
-- **TypeScript**: A library for creating and managing nodes.
+- **TypeScript**
 - **Hyperledger Besu**: Technology for creating private networks with Proof of Authority (QBFT, IBFT2.0, Clique) protocols.
-- **Ethers**: 
+- **Ethers**: A library for managing nodes interaction and info.
 - **Docker**: Used to create containers for deploying nodes.
 - **Tailwind CSS**: A CSS framework for styling.
 
@@ -68,6 +68,7 @@ git clone https://github.com/ikermendii/ikermendii-pfmweb2.5-feb25.git
 
 ```bash
 yarn install
+yarn add ethers
 ```
 
 ### 5️. Start the Hyperledger Besu Network with Clique PoA
