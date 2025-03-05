@@ -9,8 +9,6 @@ This Bash script automates the setup of a blockchain network using Hyperledger B
 1. **Docker**: Ensure Docker is installed and configured.
 2. **Hyperledger Besu**: Download it from the [official Hyperledger Besu website](https://besu.hyperledger.org/).
 3. **jq**: A command-line tool for processing JSON.
-4. **bc**: Arbitrary-precision calculator for mathematical operations.
-5. **Metamask Account**: Provide a valid address in the`0x...` format.
 
 ### Permissions
 
