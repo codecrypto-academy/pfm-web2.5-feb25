@@ -45,7 +45,7 @@ Asegúrate de tener Docker instalado en tu sistema. Si no lo tienes, puedes segu
 
 # Script
 ## createBESUnetwork.sh
-El script `createBESUnetwork.sh` automatiza la creación de una red BESU (Ethereum client compatible con la red de pruebas y Mainnet). El script permite configurar el número de nodos de la red BESU y crear múltiples redes. Además, se puede añadir nuevos nodos o redes después de haber creado la configuración inicial.
+El script `createBESUnetwork.sh` automatiza la creación de una red BESU (Ethereum client compatible con la red de pruebas y Mainnet). El script permite crear una red BESU.
 
 ### Ejecutar el script
 
