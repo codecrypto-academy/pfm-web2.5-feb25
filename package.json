@@ -1,0 +1,31 @@
+{
+  "name": "pfm-web2.5-feb25",
+  "version": "1.0.0",
+  "description": "<img src=\"esquemaProyBesu.png\" alt=\"EsquemaProyBesu 1\" width=\"500\"/>\r <br>",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/dockerode": "^3.3.35",
+    "dockerode": "^4.0.4",
+    "elliptic": "^6.6.1",
+    "ethers": "^6.13.5",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.9",
+    "@types/node-fetch": "^2.6.12",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}

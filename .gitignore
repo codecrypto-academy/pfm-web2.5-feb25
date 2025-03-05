@@ -1,0 +1,32 @@
+# Ignorar node_modules
+node_modules/
+
+# Ignorar todo el contenido dentro de la carpeta network/bootnode, pero permitir que la carpeta vacía se suba
+network/*
+
+# Archivos específicos de Visual Studio Code
+.vscode/
+
+# Archivos de log y temporales
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Archivos de sistema (macOS, Windows)
+.DS_Store
+Thumbs.db
+
+# Archivos de configuración personal (si usas un editor o herramientas con archivos de configuración personal)
+.idea/
+
+# Archivos generados por herramientas de despliegue
+/dist
+/build
+
+# Archivos generados por pruebas
+/coverage
+
+# Archivos de entorno local
+.env
+.env.*.local
