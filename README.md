@@ -84,9 +84,8 @@ The script allows you to configure the following:
 - **Directory**: The directory where a folder for the network will be created.  
 
 ### Example Usage:  
-
 This command will create a BESU network called "TEST" with 4 nodes.  
-*Video  
+
 
 ## createPrivatePublicKeys.mjs  
 ![CodeCrypto (1)](https://github.com/user-attachments/assets/6957b154-1bd2-4162-98c2-1815688fee51)
