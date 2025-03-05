@@ -10,7 +10,7 @@ describe('BesuNetwork', () => {
 
     beforeEach(() => {
         // Iniciate object
-        besu = new BesuNetwork({ rpcUrl: 'http://localhost:8545' });
+        besu = new BesuNetwork({ rpcUrl: 'http://localhost:9991' });
     });
 
     afterEach(() => {
@@ -24,7 +24,7 @@ describe('BesuNetwork', () => {
 
             await expect(besu.reset('test-network')).resolves.toBeUndefined();
             expect(execSync).toHaveBeenCalledWith(`docker rm -f $(docker ps -a --format "{{.Names}}" --filter "label=network=test-network") 2>/dev/null`);
-            expect(execSync).toHaveBeenCalledWith('docker network rm $NETWORK_NAME 2>/dev/null');
+            expect(execSync).toHaveBeenCalledWith('docker network rm test-network 2>/dev/null');
             expect(execSync).toHaveBeenCalledWith('rm -rf networks/test-network');
         });
     });

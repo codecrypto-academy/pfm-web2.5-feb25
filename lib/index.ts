@@ -12,11 +12,11 @@ export class BesuNetwork {
     async reset(networkName: string): Promise<void> {
         try {
             execSync(`docker rm -f $(docker ps -a --format "{{.Names}}" --filter "label=network=${networkName}") 2>/dev/null`);
-            execSync(`docker network rm $NETWORK_NAME 2>/dev/null`);
-            execSync(`rm -rf networks/${networkName}`)
+            execSync(`docker network rm ${networkName} 2>/dev/null`);
+            execSync(`rm -rf networks/${networkName}`);
             console.log(`Net ${networkName} reset successfully`);
         } catch (error) {
-
+            console.error(error)
         }
     }
     async createNetwork(networkName: string, subnet: string) {
@@ -185,11 +185,11 @@ async function transfer(from: string, to: string, amount: string, urlhost: strin
 }
 }
 //Arguments for script.sh
-/*const args = process.argv.slice(3)
+const args = process.argv.slice(3)
 const [from, to, amount, urlhost] = args
 if (args.length < 4) {
     console.error("Error: Faltan parametros. yarn tsx ./lib/index.ts transfer <from> <to> <amount> <url>")
     process.exit(1);
 }
 
-transfer(from, to, amount, urlhost);*/
+transfer(from, to, amount, urlhost);

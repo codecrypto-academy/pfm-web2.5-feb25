@@ -76,7 +76,7 @@ docker run -d --name bootnode --label network=$NETWORK_NAME --ip $BOOTNODE_IP --
  --node-private-key-file=/data/bootnode/key
 
 #lapse time before function test
-sleep 9
+sleep 15
 
 WALLET_ADDRESS="$(cat networks/$NETWORK_NAME/bootnode/address)"
 
