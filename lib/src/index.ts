@@ -1,4 +1,5 @@
 import { exec } from 'child_process';
+import { ethers } from 'ethers';
 import fs from 'fs';
 
 export interface Node {
@@ -13,7 +14,7 @@ export interface Node {
 }
 
 export class BesuClique {
-  private version: string;
+  private version: string = '1.0.0';
   private networkName: string;
   private networkId: number = 123;
   private nodes: Node[];
@@ -54,26 +55,46 @@ export class BesuClique {
   }
 }`;
 
-
-  constructor(version: string = '1.0.0', networkName: string = 'besuClique') {
-    this.version = version;
+  /**
+   * Creates a _besuClique_ instance.
+   * @param networkName - (Optional) The name of the network. Default is _besuClique_.
+   */
+  constructor(networkName: string = 'besuClique') {
     this.networkName = networkName;
     this.nodes = [];
   }
 
   // Getters and Setters
+
+  /**
+   * Returns the version number of the library.
+   * @returns The number of the version
+   */
   getVersion(): string {
     return this.version;
   }
 
+  /**
+   * Sets the network name.
+   * @param networkName - The name to set.
+   */
   setNetworkName(networkName: string): void {
     this.networkName = networkName;
   }
 
+  /**
+   * Gets the name of the network.
+   * @returns The network name.
+   */
   getNetworkName(): string {
     return this.networkName;
   }
 
+  /**
+   * Adds a node to the node array.
+   * @param node - The node object to add.
+   * @returns 'Node added' if the node was added, 'Node already exists' if the node already exists.
+   */
   addNode(node: Node): string {
     if (this.nodes.find(n => n.name === node.name)) {
       // throw new Error('Node already exists');
@@ -83,23 +104,45 @@ export class BesuClique {
     return 'Node added';
   }
 
+  /**
+   * Removes a node from the node array.
+   * @param nodeName - The name of the node to remove.
+   */
   removeNode(nodeName: string): void {
     this.nodes = this.nodes.filter(node => node.name !== nodeName);
   }
 
+  /**
+   * Gets a node object by it's name.
+   * @param nodeName - The name of the node to get.
+   * @returns The node object which name is the same as the nodeName parameter.
+   */
   getNode(nodeName: string): Node | undefined {
     return this.nodes.find(node => node.name === nodeName);
   }
 
+  /**
+   * Gets all the node list.
+   * @returns An array of node objects.
+   */
   getNodes(): Node[] {
     return this.nodes;
   }
 
+  /**
+   * Gets the number of nodes in the node array.
+   * @returns The number of nodes.
+   */
   getNodesCount(): number {
     return this.nodes.length;
   }
 
   // Methods
+
+  /**
+   * Checks if Docker is installed and running.
+   * @returns True of false.
+   */
   async checkDocker(): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -129,6 +172,10 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Creates a Docker network using the value of _networkName_, if it's empty, it will use _besuClique_ as default.
+   * @returns True if network was created, false otherwise.
+   */
   async createNetwork(): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -156,6 +203,11 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Gets the IP of a node.
+   * @param node - The node to get the IP.
+   * @returns An updated copy of the _node_ given with the _dockerIP_ property updated.
+   */
   getNodeDockerIP(node: Node): Promise<Node> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -181,6 +233,11 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Gets the Docker container id of a node.
+   * @param node - The node to get the Docker container id.
+   * @returns An updated copy of the _node_ given with the _dockerId_ property updated.
+   */
   getNodeDockerId(node: Node): Promise<Node> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -206,10 +263,15 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Sets a _node.enode_ value taking it from the Docker container log.
+   * @param node - The node to get the _enode_ value.
+   * @returns An updated copy of the _node_ given with the _enode_ property updated..
+   */
   setNodeEnode(node: Node): Promise<Node> {
     return new Promise(async (resolve, reject) => {
       try {
-        exec(`docker logs '${this.networkName}-${node.name}' | grep "enode" | grep -o 'enode://[^ ]*@'`, async(error, stdout, stderr) => {
+        exec(`docker logs '${this.networkName}-${node.name}' | grep "enode" | grep -o 'enode://[^ ]*@'`, async (error, stdout, stderr) => {
           if (error) {
             resolve(node);
           } if (stderr) {
@@ -230,6 +292,11 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Creates a Docker container using the _node_ properties. This method is used to create the master node.
+   * @param node - The _node_ to get the properties to create the container.
+   * @returns An updated copy of the _node_ given with the _dockerId_ property updated.
+   */
   async createNodeMaster(node: Node): Promise<Node> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -239,6 +306,7 @@ export class BesuClique {
           if (error) {
             if (error.message.includes('already in use')) {
               updatedNode = await this.getNodeDockerId(node);
+              await this.sleep(5000);
               resolve(updatedNode);
             } else {
               reject(new Error('Error creating node'));
@@ -247,6 +315,7 @@ export class BesuClique {
           if (stderr) {
             if (stderr.includes('already in use')) {
               updatedNode = await this.getNodeDockerId(node);
+              await this.sleep(5000);
               resolve(updatedNode);
             } else {
               reject(new Error('Error creating node'));
@@ -254,6 +323,7 @@ export class BesuClique {
           }
 
           updatedNode.dockerId = stdout;
+          await this.sleep(5000);
           resolve(updatedNode);
         })
       } catch (error) {
@@ -262,6 +332,11 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Creates a Docker container using the _node_ properties. This method is used to create a slave node. It needs the _enode_ of the master node.
+   * @param node - The _node_ to get the properties to create the container.
+   * @returns An updated copy of the _node_ given with the _dockerId_ property updated.
+   */
   async createNodeSlave(node: Node, enode: string): Promise<Node> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -271,6 +346,7 @@ export class BesuClique {
           if (error) {
             if (error.message.includes('already in use')) {
               updatedNode = await this.getNodeDockerId(node);
+              await this.sleep(5000);
               resolve(updatedNode);
             } else {
               reject(new Error('Error creating node'));
@@ -279,6 +355,7 @@ export class BesuClique {
           if (stderr) {
             if (stderr.includes('already in use')) {
               updatedNode = await this.getNodeDockerId(node);
+              await this.sleep(5000);
               resolve(updatedNode);
             } else {
               reject(new Error('Error creating node'));
@@ -286,6 +363,7 @@ export class BesuClique {
           }
 
           updatedNode.dockerId = stdout;
+          await this.sleep(5000);
           resolve(updatedNode);
         })
       } catch (error) {
@@ -294,11 +372,14 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Starts a previously created Docker container of the given _node_.
+   * @param node - The _node_ to start.
+   * @returns 'Node started' or _error_.
+   */
   async startNode(node: Node): Promise<string> {
     return new Promise(async (resolve, reject) => {
       try {
-        const updatedNode = node;
-
         exec(`docker start ${this.networkName}-${node.name}`, async (error, stdout, stderr) => {
           if (error) {
             resolve(error.message);
@@ -307,7 +388,7 @@ export class BesuClique {
             resolve(stderr);
           }
 
-          resolve('Node stopped');
+          resolve('Node started');
         })
       } catch (error) {
         reject(error);
@@ -315,11 +396,14 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Stops a previously created and running Docker container of the given _node_.
+   * @param node - The _node_ to stop.
+   * @returns 'Node stopped' or _error_.
+   */
   async stopNode(node: Node): Promise<string> {
     return new Promise(async (resolve, reject) => {
       try {
-        const updatedNode = node;
-
         exec(`docker stop ${this.networkName}-${node.name}`, async (error, stdout, stderr) => {
           if (error) {
             reject(error);
@@ -336,11 +420,38 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Gets the status of a Docker container of the given _node_.
+   * @param node - The _node_ to get the status.
+   * @returns The status of the container.
+   */
+  async getNodeStatus(node: Node): Promise<string> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        exec(`docker inspect -f '{{.State.Status}}' ${this.networkName}-${node.name}`, async (error, stdout, stderr) => {
+          if (error) {
+            reject(error);
+          }
+          if (stderr) {
+            resolve(stderr);
+          }
+
+          resolve(stdout);
+        })
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Deletes a previously stoped Docker container of the given _node_.
+   * @param node - The _node_ to delete.
+   * @returns 'Node deleted' or _error_.
+   */
   async deleteNode(node: Node): Promise<string> {
     return new Promise(async (resolve, reject) => {
       try {
-        const updatedNode = node;
-
         exec(`docker rm ${this.networkName}-${node.name}`, async (error, stdout, stderr) => {
           if (error) {
             reject(error);
@@ -357,6 +468,11 @@ export class BesuClique {
     });
   }
 
+  /**
+   * Creates a Docker container and generates a _node address_ in the _networkName_/_node_/_data_ folder.
+   * @param node - The _node_ to get the properties to create the container.
+   * @returns 'Created' if address was created, _error_ otherwise.
+   */
   async generateAddress(node: Node): Promise<string> {
     return new Promise(async (resolve, reject) => {
       exec(`docker run --rm -v ./${this.networkName}/${node.name}/data:/data hyperledger/besu:latest --data-path=/data public-key export-address --to=/data/node1Address`, (error, stdout, stderr) => {
@@ -369,11 +485,16 @@ export class BesuClique {
         if (fs.existsSync(`./${this.networkName}/${node.name}/data/node1Address`)) {
           resolve(fs.readFileSync(`./${this.networkName}/${node.name}/data/node1Address`, 'utf8').split('0x')[1]);
         }
-        resolve('');
+        resolve('Created');
       })
     });
   }
 
+  /**
+   * Creates a _genesis_ file inside the _networkName_/_node_ folder.
+   * @param address - The address of the master node.
+   * @returns True or false.
+   */
   createGenesis(address: string): boolean {
     let genesis = this.baseGenesis;
     genesis = genesis.replace(this.genReplaceText, address);
@@ -385,16 +506,149 @@ export class BesuClique {
     }
   }
 
+  /**
+   * Gets the _privateKey_ for the _walletId_ given looking inside the _genesis_ file.
+   * @param walletId - The _walletId_ to get the _privateKey_.
+   * @returns The '0x...' formated _privateKey_.
+   */
   getPrivateKey(walletId: string): string {
     const genesis = require(`../${this.networkName}/cliqueGenesis.json`);
-    return genesis.alloc[walletId].privateKey;
+    return `0x${genesis.alloc[walletId].privateKey}`;
   }
 
+  /**
+ * Sends the _amountETH_ from the _privateKey_ account to the _destWallet_.
+ * @param destWallet - The wallet address to send the _amountETH_ (Format is 'Ox...').
+ * @param privateKey - The private key of the wallet which will send the _amountETH_ to the _destWallet_.
+ * @param amountETH - The amount of ETH to send. 
+ * @returns The block hash of the transaction.
+ */
+  sendTransaction = async (destWallet: string, privateKey: string, amountETH: number): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const provider = new ethers.JsonRpcProvider(`http://localhost:${this.nodes[0].portJSON}`);
+
+        const wallet = new ethers.Wallet(privateKey, provider);
+
+        const tx = {
+          to: destWallet,
+          value: ethers.parseEther(amountETH.toString()),
+          gasLimit: 21000,
+          gasPrice: (await provider.getFeeData()).gasPrice
+        };
+
+        try {
+          const txResponse = await wallet.sendTransaction(tx);
+
+          const receipt = await txResponse.wait();
+          resolve(receipt!.blockHash.toString());
+
+        } catch (error) {
+          reject(error);
+        }
+      }
+      catch (error) {
+        reject(error);
+      }
+    })
+  };
+
+  /**
+   * Gets the balance of the _walletId_.
+   * @param walletId - The wallet address to get the balance.
+   * @returns The balance in ETH.
+   */
+  getBalance = async (walletId: string): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const provider = new ethers.JsonRpcProvider(`http://localhost:${this.nodes[0].portJSON}`);
+        const balance = await provider.getBalance(walletId);
+        resolve(ethers.formatEther(balance));
+      } catch (error) {
+        reject(error);
+      }
+    })
+  };
+
+  /**
+   * Removes all the local data of the network.
+   */
   clearLocalData(): void {
     exec(`rm -rf ./${this.networkName}`);
   }
 
+  /**
+   * Sleeps the process for _ms_ milliseconds.
+   * @param ms - The amount of milliseconds to sleep
+   * @returns A promise that resolves after _ms_ milliseconds.
+   */
   sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
+// ToDo: Erase before release
+
+(async () => {
+  try {
+    console.log('Starting...');
+    const besuClique = new BesuClique();
+
+    besuClique.addNode({ name: 'Node-1', portJSON: 8545, portWS: 8546, portP2P: 30303 });
+    besuClique.addNode({ name: 'Node-2', portJSON: 8555, portWS: 8556, portP2P: 30304 });
+    besuClique.addNode({ name: 'Node-3', portJSON: 8565, portWS: 8566, portP2P: 30305 });
+
+    // console.log(await besuClique.sendTransaction( "0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C", besuClique.getPrivateKey('f17f52151EbEF6C7334FAD080c5704D77216b732'), 100));
+    // console.log(await besuClique.getBalance('0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C'));
+
+    besuClique.getNodes()[0].address = await besuClique.generateAddress(besuClique.getNodes()[0]);
+    besuClique.createGenesis(besuClique.getNodes()[0].address!);
+    await besuClique.createNetwork();
+
+    try {
+      const status = await besuClique.getNodeStatus(besuClique.getNodes()[0]);
+      if (status === 'running') {
+        try {
+          const result = await besuClique.stopNode(besuClique.getNodes()[0])
+          if (result === 'Node stopped') {
+            try {
+              const result = await besuClique.deleteNode(besuClique.getNodes()[0]);
+              if (result === 'Node deleted') {
+                besuClique.getNodes()[0] = await besuClique.createNodeMaster(besuClique.getNodes()[0]);
+              }
+            } catch (error) {
+              console.log(error);
+            }
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    } catch (error) {
+      besuClique.getNodes()[0] = await besuClique.createNodeMaster(besuClique.getNodes()[0]);
+    }
+
+    besuClique.getNodes()[0] = await besuClique.setNodeEnode(besuClique.getNodes()[0]);
+
+    if (besuClique.getNodes()[0].enode != '') {
+      besuClique.getNodes()[0] = await besuClique.getNodeDockerIP(besuClique.getNodes()[0]);
+      if (besuClique.getNodes()[0].dockerIP != '') {
+        besuClique.getNodes()[1] = await besuClique.createNodeSlave(besuClique.getNodes()[1], besuClique.getNodes()[0].enode!);
+      }
+    }
+
+    // console.log(await besuClique.getNodeStatus(besuClique.getNodes()[2]));
+
+    // do
+    //   for (let i = 0; i < besuClique.getNodesCount(); i++) {
+    //     console.log(`Status ${i}: `, await besuClique.getNodeStatus(besuClique.getNodes()[i]));
+    //     besuClique.sleep(2500);
+    //   }
+    // while (await besuClique.getNodeStatus(besuClique.getNodes()[0]) !== 'running' && await besuClique.getNodeStatus(besuClique.getNodes()[1]) !== 'running');
+
+    console.log('Done');
+  } catch (error) {
+    console.log(error);
+  }
+})();
+

@@ -65,7 +65,7 @@ describe('getNodes', () => {
   })
 });
 
-describe('addNode', () => {
+describe('addNodes', () => {
   it('adds the mock nodes and gets them', () => {
     for (let i = 0; i < mockNodes.length; i++) {
       besuClique.addNode(mockNodes[i]);
@@ -83,7 +83,7 @@ describe('removeNode', () => {
   })
 });
 
-describe('createAddress', () => {
+describe('generateAddress', () => {
   it('should return an string', async () => {
     besuClique.getNodes()[0].address = await besuClique.generateAddress(besuClique.getNodes()[0]);
     expect(besuClique.getNodes()[0].address!.length).toBe(40);
@@ -106,7 +106,7 @@ describe('createNodeMaster', () => {
   it('should return a node', async () => {
     besuClique.getNodes()[0] = await besuClique.createNodeMaster(besuClique.getNodes()[0]);
     expect(besuClique.getNodes()[0].dockerId?.length).toBeGreaterThan(0);
-    await besuClique.sleep(5000);
+    // await besuClique.sleep(5000);
   }, 10000)
 });
 
@@ -132,6 +132,18 @@ describe('createNodeSlave - Node 2', () => {
   }, 10000)
 });
 
+describe('sendTransaction', () => {
+  it('should return a string', async () => {
+    expect(await besuClique.sendTransaction("0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C", besuClique.getPrivateKey("f17f52151EbEF6C7334FAD080c5704D77216b732"), 100)).toHaveLength(66);
+  }, 25000)
+});
+
+describe('getBalance', () => {
+  it('should return a string', async () => {
+    expect(await besuClique.getBalance("0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C")).toBeDefined();
+  }, 10000)
+});
+
 describe('stopNode - Node 2', () => {
   it('should return a string', async () => {
     expect(await besuClique.stopNode(besuClique.getNodes()[1])).toBe('Node stopped');
@@ -146,7 +158,7 @@ describe('deleteNode - Node 2', () => {
 
 describe('getPrivateKey', () => {
   it('should return a string', () => {
-    expect(besuClique.getPrivateKey('f17f52151EbEF6C7334FAD080c5704D77216b732')).toBe('ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f');
+    expect(besuClique.getPrivateKey('f17f52151EbEF6C7334FAD080c5704D77216b732')).toBe('0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f');
   })
 });
 
