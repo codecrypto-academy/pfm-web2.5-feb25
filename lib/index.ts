@@ -1,12 +1,23 @@
 import { execSync } from 'child_process';
-import { ethers } from 'ethers';
-import fs from 'fs';
+import { ethers } from "ethers";
+import { JsonRpcProvider } from "ethers";
+import * as fs from 'fs';
 
 export class BesuNetwork {
-    private provider: ethers.JsonRpcApiProvider;
+    private networks: { [networkName: string]: { nodes: string[], activeNode: string | null } } = {};
+    private provider: JsonRpcProvider | null = null;
 
-    constructor(private config: { rpcUrl: string }) {
-        this.provider = new ethers.JsonRpcProvider(config.rpcUrl);
+    // Set active node for interactions (RPC calls)
+    setActiveNode(networkName: string, nodeUrl: string): void {
+        if (!this.networks[networkName]) {
+            throw new Error(`Network ${networkName} does not exist.`);
+        }
+        if (!this.networks[networkName].nodes.includes(nodeUrl)) {
+            throw new Error(`Node ${nodeUrl} is not part of network ${networkName}.`);
+        }
+        this.networks[networkName].activeNode = nodeUrl;
+        this.provider = new JsonRpcProvider(nodeUrl);
+        console.log(`Active node for ${networkName} set to ${nodeUrl}`);
     }
 
     async reset(networkName: string): Promise<void> {
@@ -14,9 +25,11 @@ export class BesuNetwork {
             execSync(`docker rm -f $(docker ps -a --format "{{.Names}}" --filter "label=network=${networkName}") 2>/dev/null`);
             execSync(`docker network rm ${networkName} 2>/dev/null`);
             execSync(`rm -rf networks/${networkName}`);
+            delete this.networks[networkName];
+
             console.log(`Net ${networkName} reset successfully`);
         } catch (error) {
-            console.error(error)
+            console.error("Error resetting network:", error)
         }
     }
     async createNetwork(networkName: string, subnet: string) {
@@ -24,6 +37,8 @@ export class BesuNetwork {
             this.reset(networkName);
             execSync(`mkdir -p networks/${networkName}`);
             execSync(`docker network create ${networkName} --subnet ${subnet} --label network=${networkName}`);
+            this.networks[networkName] = { nodes: [], activeNode: null }
+
             console.log(`Net ${networkName} created successfully`);
         } catch (error) {
             console.error("Error in network creation:", error);
@@ -31,8 +46,21 @@ export class BesuNetwork {
     }
     async deleteNetwork(networkName: string) {
         try {
-            execSync(`docker network rm ${networkName}`);
-            console.log(`Network ${networkName} deleted.`);
+            //Verify if exits the network provided
+            if (this.networks[networkName]) {
+                // Verify if exists any nodes inside
+                if (!this.networks[networkName].nodes || Object.keys(this.networks[networkName].nodes).length === 0) {
+                    execSync(`docker network rm ${networkName}`);
+                    execSync(`rm -rf networks/${networkName}`);
+                    delete this.networks[networkName];
+
+                    console.log(`Network ${networkName} deleted.`);
+                } else {
+                    console.log("You must remove the nodes of the network first");
+                }
+            } else {
+                console.log(`Network ${networkName} does not exist.`);
+            }
         } catch (error) {
             console.error("Error in network deletion:", error);
         }
@@ -43,11 +71,9 @@ export class BesuNetwork {
         try {
             execSync(`besu --data-path=${nodePath} public-key export-address --to=${nodePath}/address`);
             execSync(`besu --data-path=${nodePath} public-key export --to=${nodePath}/publickey`);
-            
 
             const address = fs.readFileSync(`${nodePath}/address`, "utf8").trim();
             const publicKey = fs.readFileSync(`${nodePath}/publickey`, "utf8").trim();
-            
 
             return { address, publicKey };
         } catch (error) {
@@ -121,6 +147,7 @@ export class BesuNetwork {
                 --config-file=/data/config.toml --data-path=/data/${containerName}/data \
                 --node-private-key-file=/data/${containerName}/key
             `);
+            this.networks[networkName].nodes.push(`http://localhost:${nodeport}`);
 
             console.log(`${containerName} added to network ${networkName} `);
         } catch (error) {
@@ -128,68 +155,72 @@ export class BesuNetwork {
         }
     }
 
-// Add other nodes to the network
-async addNode(containerName: string, networkName: string, nodeport: string, networkPath: string) {
-    try {
-        execSync(`docker run -d --name ${containerName} \
-        --network ${networkName} --label network=${networkName} \
-        -p ${nodeport}:8545 -v $(pwd)/${networkPath}:/data \
-        hyperledger/besu:latest \
-        --config-file=/data/config.toml --data-path=/data/${containerName}/data`);
-        console.log(`${containerName} added to network ${networkName} `);
+    // Add other client nodes to the network
+    async addNode(containerName: string, networkName: string, nodeport: string, networkPath: string) {
+        try {
+            execSync(`docker run -d --name ${containerName} \
+            --network ${networkName} --label network=${networkName} \
+            -p ${nodeport}:8545 -v $(pwd)/${networkPath}:/data \
+            hyperledger/besu:latest \
+            --config-file=/data/config.toml --data-path=/data/${containerName}/data
+            `);
+            this.networks[networkName].nodes.push(`http://localhost:${nodeport}`);
 
-    } catch (error) {
-        console.error(`Error adding ${containerName}: `, error);
+            console.log(`${containerName} added to network ${networkName} `);
+        } catch (error) {
+            console.error(`Error adding ${containerName}: `, error);
+        }
+    }
+
+    //Remove any nodes from the network
+    async removeNode(containerName: string) {
+        try {
+            const nodeport = (execSync(`docker port ${containerName}`, { encoding: "utf-8" }).trim()).split(":").pop();
+            execSync(`docker rm -f ${containerName} `);
+            execSync(`rm -rf ${containerName}`)
+            for (const network in this.networks) {
+                const nodeIndex = this.networks[network].nodes.indexOf(`http://localhost:${nodeport}`);
+                if (nodeIndex !== -1) {
+                    this.networks[network].nodes.splice(nodeIndex, 1);
+                    break;
+                }
+            }
+
+            console.log(`${containerName} deleted.`);
+        } catch (error) {
+            console.error(`Error deleting ${containerName}: `, error);
+        }
+    }
+
+    async getBalance(address: string): Promise<string> {
+        try {
+            if (!this.provider) {
+                throw new Error("Provider is not set.");
+            }
+            const balance = await this.provider.getBalance(address);
+            return ethers.formatEther(balance);
+
+        } catch (error) {
+            console.error("Error getting balance:", error);
+            throw new Error("Unable to get balance.");
+        }
+    }
+
+    async transfer(from: string, to: string, amount: string): Promise<void> {
+        try {
+            console.log(`Sending: ${amount} ETH`);
+            const wallet = new ethers.Wallet(from, this.provider);
+            const tx = await wallet.sendTransaction({
+                to: to,
+                value: ethers.parseEther(amount.toString())
+            });
+
+            console.log(`Transaction send: ${tx.hash} `);
+            const result = await tx.wait();
+            console.log("Transaction result: ", result)
+
+        } catch (error) {
+            console.error("Error en la transacción:", error);
+        }
     }
 }
-
-async removeNode(containerName: string) {
-    try {
-        execSync(`docker rm -f ${containerName} `);
-        console.log(`${containerName} deleted.`);
-    } catch (error) {
-        console.error(`Error deleting ${containerName}: `, error);
-    }
-}
-
-
-
-async  getBalance(address: string): Promise<string> {
-    try {
-        const balance = await this.provider.getBalance(address);
-        return ethers.formatEther(balance);
-    } catch (error) {
-        console.error("Error getting balance:", error);
-        throw new Error("Unable to get balance.");
-    }
-}
-}
-
-//For Transaction test
-async function transfer(from: string, to: string, amount: string, urlhost: string): Promise<void> {
-    try {
-    console.log(`Sending: ${amount} ETH`);
-    const provider = new ethers.JsonRpcProvider(urlhost, { chainId: 170194, name: "private" });
-    const wallet = new ethers.Wallet(from, provider);
-    const tx = await wallet.sendTransaction({
-        to: to,
-        value: ethers.parseEther(amount.toString())
-    });
-
-    console.log(`Transaction send: ${tx.hash} `);
-    const result = await tx.wait();
-    console.log("Transaction result: ", result)
-
-} catch (error) {
-    console.error("Error en la transacción:", error);
-}
-}
-//Arguments for script.sh
-const args = process.argv.slice(3)
-const [from, to, amount, urlhost] = args
-if (args.length < 4) {
-    console.error("Error: Faltan parametros. yarn tsx ./lib/index.ts transfer <from> <to> <amount> <url>")
-    process.exit(1);
-}
-
-transfer(from, to, amount, urlhost);

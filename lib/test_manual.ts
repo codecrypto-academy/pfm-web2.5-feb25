@@ -1,14 +1,14 @@
-import { BesuNetwork } from 'lib/index';
+import { BesuNetwork } from './index';
 
-const besu = new BesuNetwork({ rpcUrl: 'http://localhost:9991' });
+const besu = new BesuNetwork();
 
 async function main() {
 
-    //const ini = await besu.reset("besu-testnet")
+    //const ini = await besu.reset("besu-nodes")
 
     //const creatNet = await besu.createNetwork("besu-testnet", "172.20.0.0/16");
 
-    //const deleteNet = await besu.deleteNetwork("besu-testnet");
+    //const deleteNet = await besu.deleteNetwork("besu-nodes");
 
     //const addBoot = besu.addBootnode("bootnode3","besu-testnet","9991", "networks/besu-testnet")
 

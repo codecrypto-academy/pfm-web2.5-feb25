@@ -10,12 +10,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ethersproject/bignumber": "^5.8.0",
     "@types/jest": "^29.5.14",
     "child_process": "^1.0.2",
     "ethers": "^6.13.5",
     "fs": "^0.0.1-security",
     "jq": "^1.7.2",
-    "next": "15.1.7",
+    "next": "^15.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "ts-jest": "^29.2.6"
@@ -24,8 +25,8 @@
     "@babel/preset-env": "^7.26.9",
     "@babel/preset-typescript": "^7.26.0",
     "@eslint/eslintrc": "^3",
-    "@types/node": "^20",
-    "@types/react": "^19",
+    "@types/node": "^22.13.9",
+    "@types/react": "^19.0.10",
     "@types/react-dom": "^19",
     "babel-jest": "^29.7.0",
     "eslint": "^9",
@@ -35,6 +36,6 @@
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.2"
   }
 }

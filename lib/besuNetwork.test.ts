@@ -1,77 +1,239 @@
-import { BesuNetwork } from 'lib/index';
+import { BesuNetwork } from './index.ts';
 import { execSync } from 'child_process';
-import fs from 'fs';
 import { ethers } from 'ethers';
+import * as fs from 'fs';
 
+// Mock of execSync
+jest.mock('child_process', () => ({
+    execSync: jest.fn(),
+}));
 
+// Mock de fs
+jest.mock('fs', () => {
+    return {
+        ...jest.requireActual('fs'),
+        writeFileSync: jest.fn(),
+        readFileSync: jest.fn(() => 'mockedContent'),
+    };
+});
+
+// Mock of ethers
+jest.mock('ethers', () => {
+    const actualEthers = jest.requireActual('ethers');
+    return {
+        ...actualEthers,
+        JsonRpcProvider: jest.fn().mockImplementation(() => ({
+            getBalance: jest.fn().mockResolvedValue(BigInt("10000000000000000000")), // 10 ETH in BigInt
+        })),
+        Wallet: jest.fn().mockImplementation(() => ({
+            sendTransaction: jest.fn().mockResolvedValue({
+                hash: '0x123',
+                wait: jest.fn().mockResolvedValue({ status: 1 }),
+            })
+        })),
+    };
+});
 
 describe('BesuNetwork', () => {
     let besu: BesuNetwork;
 
     beforeEach(() => {
-        // Iniciate object
-        besu = new BesuNetwork({ rpcUrl: 'http://localhost:9991' });
+        besu = new BesuNetwork();
     });
 
     afterEach(() => {
         jest.clearAllMocks();
     });
 
-    // Test of function reset
-    describe('reset', () => {
-        it('debería eliminar la red y el contenedor correctamente', async () => {
-            (execSync as jest.Mock).mockReturnValueOnce(null);  // Mocked execSync success
+    //Reset function test
+    test('should reset the network', async () => {
+        const mockExecSync = execSync as jest.Mock;
 
-            await expect(besu.reset('test-network')).resolves.toBeUndefined();
-            expect(execSync).toHaveBeenCalledWith(`docker rm -f $(docker ps -a --format "{{.Names}}" --filter "label=network=test-network") 2>/dev/null`);
-            expect(execSync).toHaveBeenCalledWith('docker network rm test-network 2>/dev/null');
-            expect(execSync).toHaveBeenCalledWith('rm -rf networks/test-network');
-        });
+        // Simulación de la eliminación de la red
+        mockExecSync.mockReturnValueOnce(null);
+
+        await besu.reset('testNetwork');
+
+        expect(mockExecSync).toHaveBeenCalledWith('docker rm -f $(docker ps -a --format "{{.Names}}" --filter "label=network=testNetwork") 2>/dev/null');
+        expect(mockExecSync).toHaveBeenCalledWith('docker network rm testNetwork 2>/dev/null');
+        expect(mockExecSync).toHaveBeenCalledWith('rm -rf networks/testNetwork');
     });
 
-    // Test of function createNetwork
-    describe('createNetwork', () => {
-        it('debería crear la red correctamente', async () => {
-            (execSync as jest.Mock).mockReturnValueOnce(null);
+    //createNetwork function test
+    test('should create a new network', async () => {
+        const mockExecSync = execSync as jest.Mock;
 
-            await expect(besu.createNetwork('test-network', '192.168.0.0/16')).resolves.toBeUndefined();
-            expect(execSync).toHaveBeenCalledWith('mkdir -p networks/test-network');
-            expect(execSync).toHaveBeenCalledWith('docker network create test-network --subnet 192.168.0.0/16 --label nerwork=test-network');
-        });
+        // Network creation simulated
+        mockExecSync.mockReturnValueOnce(null);
+
+        await besu.createNetwork('testNetwork', '192.168.1.0/24');
+
+        expect(mockExecSync).toHaveBeenCalledWith('mkdir -p networks/testNetwork');
+        expect(mockExecSync).toHaveBeenCalledWith(
+            'docker network create testNetwork --subnet 192.168.1.0/24 --label network=testNetwork'
+        );
+        expect(besu['networks']['testNetwork']).toBeDefined();
     });
 
-    // Test of function deleteNetwork
-    describe('deleteNetwork', () => {
-        it('debería eliminar la red correctamente', async () => {
-            (execSync as jest.Mock).mockReturnValueOnce(null);
+    //deleteNetwork function test
+    test('should delete a network', async () => {
+        const mockExecSync = execSync as jest.Mock;
 
-            await expect(besu.deleteNetwork('test-network')).resolves.toBeUndefined();
-            expect(execSync).toHaveBeenCalledWith('docker network rm test-network');
+        // Network config
+        await besu.createNetwork("testNetwork", "192.168.1.0/24");
+
+        // Network delete
+        await besu.deleteNetwork("testNetwork");
+
+        expect(mockExecSync).toHaveBeenCalledWith(`docker network rm testNetwork`);
+        expect(mockExecSync).toHaveBeenCalledWith(`rm -rf networks/testNetwork`);
+        expect(besu['networks']['testNetwork']).toBeUndefined();
+
+    })
+
+    //addBootnode function test
+    test('should add a bootnode', async () => {
+        const mockExecSync = execSync as jest.Mock;
+        const mockFs = jest.spyOn(fs, 'writeFileSync').mockImplementation(() => { });
+        const mockReadFileSync = jest.spyOn(fs, 'readFileSync').mockImplementation((path: fs.PathOrFileDescriptor) => {
+            if (typeof path === 'string' && path.includes('address')) {
+                return '0x1234567890abcdef';
+            }
+            if (typeof path === 'string' && path.includes('publickey')) {
+                return '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';
+            }
+            return '';
         });
+
+        // Network config
+        await besu.createNetwork("testNetwork", "192.168.1.0/24");
+
+        // addBootnode simulation
+        mockExecSync.mockReturnValueOnce(null);
+
+        await besu.addBootnode('bootnodeContainer', 'testNetwork', '30303', 'networks/testNetwork');
+
+        expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining('docker run -d --name bootnodeContainer'));
+        expect(mockReadFileSync).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/bootnodeContainer/address'), 'utf8');
+        expect(mockReadFileSync).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/bootnodeContainer/publickey'), 'utf8');
+        expect(mockFs).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/genesis.json'), expect.any(String));
+        expect(mockFs).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/config.toml'), expect.any(String));
+        console.log(mockFs.mock.calls);
     });
 
-    // Test of function addBootnode
-    describe('addBootnode', () => {
-        it('debería agregar un bootnode correctamente', async () => {
-            (fs.readFileSync as jest.Mock).mockReturnValueOnce('0x123');
-            (execSync as jest.Mock).mockReturnValueOnce(null);
+    //addNode function test
+    test('should add a node', async () => {
+        const mockExecSync = execSync as jest.Mock;
+        const mockFs = jest.spyOn(require('fs'), 'writeFileSync').mockImplementation(() => { });
 
-            await expect(besu.addBootnode('bootnode-container', 'test-network', '30303', 'path-to-network')).resolves.toBeUndefined();
-            expect(fs.readFileSync).toHaveBeenCalledWith('path-to-network/bootnode/address', 'utf8');
-            expect(execSync).toHaveBeenCalledWith(expect.stringContaining('docker run -d --name bootnode-container'));
-        });
+        // Network config
+        await besu.createNetwork("testNetwork", "192.168.1.0/24");
+
+        //addNode simulation
+        mockExecSync.mockReturnValueOnce(null);
+
+        await besu.addNode('nodeContainer', 'testNetwork', '9999', 'networks/testNetwork');
+
+        expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`docker run -d --name nodeContainer \
+            --network testNetwork --label network=testNetwork \
+            -p 9999:8545 -v $(pwd)/networks/testNetwork:/data \
+            hyperledger/besu:latest \
+            --config-file=/data/config.toml --data-path=/data/nodeContainer/data
+            `));
+        expect(besu['networks']['testNetwork'].nodes).toContain('http://localhost:9999');
     });
 
-    /* Test para la función transfer (test de transacciones)
-    describe('transfer', () => {
-        it('debería realizar una transacción correctamente', async () => {
-            const result = await besu.transfer('0xFrom', '0xTo', '1', 'http://localhost:8545');
+    //setActiveNode function test
+    test('should set active node', () => {
+        besu['networks']['testNetwork'] = { nodes: ['http://localhost:8545'], activeNode: null };
 
-            expect(result).toEqual('Transaction confirmed');
-            expect(ethers.Wallet.prototype.sendTransaction).toHaveBeenCalledWith({
-                to: '0xTo',
-                value: expect.anything(),
-            });
+        besu.setActiveNode('testNetwork', 'http://localhost:8545');
+
+        expect(besu['networks']['testNetwork'].activeNode).toBe('http://localhost:8545');
+    });
+
+    //Error in Set ActiveNode test
+    test('should throw error if node is not part of the network', () => {
+        besu['networks']['testNetwork'] = { nodes: ['http://localhost:8545'], activeNode: null };
+
+        expect(() => besu.setActiveNode('testNetwork', 'http://localhost:9999')).toThrowError(
+            'Node http://localhost:9999 is not part of network testNetwork.'
+        );
+    });
+
+    //removeNode function test
+    test('should remove a node', async () => {
+        const mockExecSync = execSync as jest.Mock;
+
+        //Mock to provide a valid exit for the docker port petition
+        (mockExecSync).mockImplementation((command: string) => {
+            if (command.includes("docker port")) {
+                return "0.0.0.0:30303";
+            }
         });
-*/
+        //Network and node config
+        await besu.createNetwork('testNetwork', '192.168.1.0/24');
+        await besu.addNode('nodeContainer', 'testNetwork', '30303', 'networks/testNetwork');
+
+        await besu.removeNode('nodeContainer');
+
+        expect(mockExecSync).toHaveBeenCalledWith("docker port nodeContainer", { encoding: "utf-8" });
+        expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`docker rm -f nodeContainer `));
+        expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`rm -rf nodeContainer`));
+        expect(besu['networks']['testNetwork'].nodes).not.toContain('http://localhost:30303');
+    });
+
+    //getBalance function test
+    test('should get balance correctly', async () => {
+        const besu = new BesuNetwork();
+
+        // Network config
+        await besu.createNetwork("testNetwork", "192.168.1.0/24");
+
+        // Node config
+        besu.addNode("testNode", "testNetwork", "8545", "networks/testNetwork");
+
+        // ActiveNode established
+        besu.setActiveNode("testNetwork", "http://localhost:8545");
+
+        // Mock of balance answer
+        jest.spyOn(ethers.JsonRpcProvider.prototype, "getBalance")
+            .mockResolvedValue(BigInt(ethers.parseEther("10").toString()));
+
+        const balance = await besu.getBalance("0x123456");
+        expect(balance).toBe("10.0");
+    });
+
+    //Transfer function test
+    test("should transfer funds successfully", async () => {
+        const besu = new BesuNetwork();
+
+        // Network config
+        await besu.createNetwork("testNetwork", "192.168.1.0/24");
+
+        // Node config
+        besu.addNode("testNode", "testNetwork", "8545", "networks/testNetwork");
+
+        // ActiveNode established
+        besu.setActiveNode("testNetwork", "http://localhost:8545");
+
+        // Create mock transaction based in TransactionResponse
+        const mockTxResponse = Object.assign(new ethers.TransactionResponse({} as any, {} as any), {
+            hash: "0x123",
+            wait: jest.fn().mockResolvedValue({ status: 1 }),
+            confirmations: 1,
+            from: "0xe51b35fc7c4d0d5224855eb090501e94d15b4cc9b3af23944991bb1e954e7cfa",
+            to: "0x456",
+            value: ethers.parseEther("1"),
+            nonce: 1,
+            gasLimit: ethers.parseUnits("21000", "wei"),
+            gasPrice: ethers.parseUnits("50", "gwei"),
+            data: "0x",
+            chainId: 1
+        });
+
+        jest.spyOn(ethers.Wallet.prototype, "sendTransaction").mockResolvedValue(mockTxResponse);
+
+        await expect(besu.transfer("0xe51b35fc7c4d0d5224855eb090501e94d15b4cc9b3af23944991bb1e954e7cfa", "0x456", "1")).resolves.not.toThrow();
+    });
 });
