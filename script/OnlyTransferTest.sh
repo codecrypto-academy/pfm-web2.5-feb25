@@ -16,43 +16,43 @@ if [ ! -d "$baseDir/nodes" ]; then
     exit 1
 fi
 
-# Get the private key of node4
-if [ ! -f "${baseDir}/nodes/node4/key" ]; then
-    echo "Error: Private key file not found at ${baseDir}/nodes/node4/key"
+# Get the private key of node1
+if [ ! -f "${baseDir}/nodes/node1/key" ]; then
+    echo "Error: Private key file not found at ${baseDir}/nodes/node1/key"
     exit 1
 fi
-node4PrivKey=$(cat "${baseDir}/nodes/node4/key" | tr -d '\n' | sed 's/^0x//')
+node1PrivKey=$(cat "${baseDir}/nodes/node1/key" | tr -d '\n' | sed 's/^0x//')
 
-# Get the address of node4
-addressNode4=$(cat "${baseDir}/nodes/node4/address")
-addressNode4=$(echo "$addressNode4" | sed 's/^0x\|^/0x/')
+# Get the address of node1
+addressnode1=$(cat "${baseDir}/nodes/node1/address")
+addressnode1=$(echo "$addressnode1" | sed 's/^0x\|^/0x/')
 
 # Get the address of node2
 addressNode2=$(cat "${baseDir}/nodes/node2/address")
 addressNode2=$(echo "$addressNode2" | sed 's/^0x\|^/0x/')
 
-# Get the balances of node2 and node4 before the transaction
+# Get the balances of node2 and node1 before the transaction
 node2BalanceWeiBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998 | jq -r '.result')
-node4BalanceWeiBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result')
+node1BalanceWeiBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressnode1'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999 | jq -r '.result')
 
 # Convert Wei balances to Ether before the transaction
 node2BalanceEtherBefore=$(echo "scale=18; $(echo "ibase=16; ${node2BalanceWeiBefore^^}" | bc) / 10^18" | bc -l)
-node4BalanceEtherBefore=$(echo "scale=18; $(echo "ibase=16; ${node4BalanceWeiBefore^^}" | bc) / 10^18" | bc -l)
+node1BalanceEtherBefore=$(echo "scale=18; $(echo "ibase=16; ${node1BalanceWeiBefore^^}" | bc) / 10^18" | bc -l)
 
 # Print balances before the transaction
 echo "Node2 balance before transaction: $node2BalanceWeiBefore Wei ($node2BalanceEtherBefore Ether)"
-echo "Node4 balance before transaction: $node4BalanceWeiBefore Wei ($node4BalanceEtherBefore Ether)"
+echo "node1 balance before transaction: $node1BalanceWeiBefore Wei ($node1BalanceEtherBefore Ether)"
 
-# Get the correct nonce for node4
-nonce=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionCount","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result')
-echo "Nonce for address $addressNode4: $nonce"
+# Get the correct nonce for node1
+nonce=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionCount","params":["'$addressnode1'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999 | jq -r '.result')
+echo "Nonce for address $addressnode1: $nonce"
 
 # Define the amount to send (in Wei)
 amountToSend="0x16345785d8a0000"  # 0.1 Ether in Wei
 
 # Create the unsigned transaction with the correct nonce
 unsignedTx=$(jq -n \
-    --arg from "$addressNode4" \
+    --arg from "$addressnode1" \
     --arg to "$addressNode2" \
     --arg nonce "$nonce" \
     --arg value "$amountToSend" \
@@ -70,7 +70,7 @@ signedTx=$(NODE_PATH="${baseDir}/node_modules" node -e "
     const {Web3} = require('web3');
     const web3 = new Web3();
     const unsignedTx = $unsignedTx;
-    const privateKey = '$node4PrivKey';
+    const privateKey = '$node1PrivKey';
     web3.eth.accounts.signTransaction(unsignedTx, privateKey)
         .then(signed => {
             if (signed.rawTransaction) {
@@ -147,14 +147,14 @@ if [ $attempt -eq $maxAttempts ]; then
     exit 1
 fi
 
-# Get the balances of node2 and node4 after the transaction
+# Get the balances of node2 and node1 after the transaction
 node2BalanceWei=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998 | jq -r '.result')
-node4BalanceWei=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result')
+node1BalanceWei=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressnode1'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999 | jq -r '.result')
 
 # Convert Wei balances to Ether after the transaction
 node2BalanceEther=$(echo "scale=18; $(echo "ibase=16; ${node2BalanceWei^^}" | bc) / 10^18" | bc -l)
-node4BalanceEther=$(echo "scale=18; $(echo "ibase=16; ${node4BalanceWei^^}" | bc) / 10^18" | bc -l)
+node1BalanceEther=$(echo "scale=18; $(echo "ibase=16; ${node1BalanceWei^^}" | bc) / 10^18" | bc -l)
 
 # Print balances after the transaction
 echo "Node2 balance after transaction: $node2BalanceWei Wei ($node2BalanceEther Ether)"
-echo "Node4 balance after transaction: $node4BalanceWei Wei ($node4BalanceEther Ether)"
+echo "node1 balance after transaction: $node1BalanceWei Wei ($node1BalanceEther Ether)"

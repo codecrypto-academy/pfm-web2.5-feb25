@@ -107,10 +107,8 @@ cat > genesis.json <<EOL
     "0xC31d5ECdc839e1cd8A8489D8D78335a07Ad82425": { "balance": "0x90000000000000000000000000000000000000000000000000000000000000" },
     "0x3e3976a0d63A28c115037048A2Ae0FE9e456f474": { "balance": "0x80000000000000000000000000000000000000000000000000000000000000" },
     "0x613aaDB6D66bC91159fb07Faf6A6ABD95b3255E7": { "balance": "0x0" },
-    "$addressNode2": { "balance": "0x20000000000000000000000000000000000000000000000000000000000000" },
-    "$addressNode3": { "balance": "0x30000000000000000000000000000000000000000000000000000000000000" },
-    "$addressNode4": { "balance": "0x40000000000000000000000000000000000000000000000000000000000000" }
-
+    "$addressNode1": { "balance": "0x99000000000000000000000000000000000000000000000000000000000000" }
+    
     
   }
 }
@@ -182,15 +180,15 @@ check_node_ready() {
 
 # Check if nodes are ready
 check_node_ready "http://localhost:9998" || exit 1  # Node 2
-check_node_ready "http://localhost:9996" || exit 1  # Node 4
+check_node_ready "http://localhost:9999" || exit 1  # Node 1
 
 
 ######################################################
 echo "Balances before transaccion:"
 node2BalanceBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998/ | jq -r '.result')
-node4BalanceBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996/ | jq -r '.result')
+node1BalanceBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode1'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999/ | jq -r '.result')
 echo "Node2 balance before: $node2BalanceBefore Wei"
-echo "Node4 balance before: $node4BalanceBefore Wei"
+echo "Node4 balance before: $node1BalanceBefore Wei"
 ######################################################
 # Function to send a raw signed transaction
 send_raw_transaction() {
@@ -217,17 +215,17 @@ send_raw_transaction() {
 
 # Get the private key of node 1 (this should be done securely)
 # NOTE: In a real environment, never expose the private key in a script.
-node4PrivKey=$(cat node4/key | tr -d '\n' | sed 's/^0x//') #| head -c 64
+node1PrivKey=$(cat node1/key | tr -d '\n' | sed 's/^0x//') #| head -c 64
 
-# Get the nonce for node4
-nonce=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionCount","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result')
+# Get the nonce for node1
+nonce=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionCount","params":["'$addressNode1'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999 | jq -r '.result')
 
 # Define the amount to send (in Wei)
 amountToSend="0x16345785d8a0000"  # 0.1 Ether in Wei
 
 # Create the unsigned transaction 
 unsignedTx=$(jq -n \
-    --arg from "$addressNode4" \
+    --arg from "$addressNode1" \
     --arg to "$addressNode2" \
     --arg nonce "$nonce" \
     --arg value "$amountToSend" \
@@ -246,7 +244,7 @@ signedTx=$(node -e "
     const {Web3} = require('web3');
     const web3 = new Web3();
     const unsignedTx = $unsignedTx;
-    const privateKey = '$node4PrivKey';
+    const privateKey = '$node1PrivKey';
     web3.eth.accounts.signTransaction(unsignedTx, privateKey)
         .then(signed => console.log(signed.rawTransaction))
         .catch(err => console.error('Signing error:', err));
@@ -276,17 +274,17 @@ while true; do
 done
 
 
-# Get the balances of node2 and node4 after the transaction
+# Get the balances of node2 and node1 after the transaction
 node2Balance=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998 | jq -r '.result')
-node4Balance=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996 | jq -r '.result')
+node1Balance=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode1'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999 | jq -r '.result')
 
 #########################################################
 echo "Balances after the transaction:"
 node2BalanceAfter=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998/ | jq -r '.result')
-node4BalanceAfter=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode4'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9996/ | jq -r '.result')
+node1BalanceAfter=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode1'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999/ | jq -r '.result')
 echo "Node2 balance after: $node2BalanceAfter Wei"
-echo "Node4 balance after: $node4BalanceAfter Wei"
+echo "Node1 balance after: $node1BalanceAfter Wei"
 #########################################################
 echo "Diferencia en balances:"
 echo "Node2: $((16#${node2BalanceAfter#0x} - 16#${node2BalanceBefore#0x})) Wei"
-echo "Node4: $((16#${node4BalanceAfter#0x} - 16#${node4BalanceBefore#0x})) Wei"
+echo "Node1: $((16#${node1BalanceAfter#0x} - 16#${node1BalanceBefore#0x})) Wei"
