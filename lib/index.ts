@@ -22,8 +22,8 @@ export class BesuNetwork {
 
     async reset(networkName: string): Promise<void> {
         try {
-            execSync(`docker rm -f $(docker ps -a --format "{{.Names}}" --filter "label=network=${networkName}") 2>/dev/null`);
-            execSync(`docker network rm ${networkName} 2>/dev/null`);
+            execSync(`docker rm -f $(docker ps -a --format "{{.Names}}" --filter "label=network=${networkName}") || true`);
+            execSync(`docker network rm ${networkName} || true`);
             execSync(`rm -rf networks/${networkName}`);
             delete this.networks[networkName];
 
@@ -34,12 +34,18 @@ export class BesuNetwork {
     }
     async createNetwork(networkName: string, subnet: string) {
         try {
-            this.reset(networkName);
+            await this.reset(networkName);
             execSync(`mkdir -p networks/${networkName}`);
             execSync(`docker network create ${networkName} --subnet ${subnet} --label network=${networkName}`);
+
+            if (!this.networks) {
+                this.networks = {};
+            }
+            
             this.networks[networkName] = { nodes: [], activeNode: null }
 
             console.log(`Net ${networkName} created successfully`);
+            console.log("Current networks:", this.networks);
         } catch (error) {
             console.error("Error in network creation:", error);
         }
@@ -66,8 +72,8 @@ export class BesuNetwork {
         }
     }
 
-    // Function to generate bootnode keys using Besu
-    private generateBootnodeKeys(nodePath: string): { address: string; publicKey: string; } {
+    // Function to generate node keys using Besu
+    private generateNodeKeys(nodePath: string): { address: string; publicKey: string; } {
         try {
             execSync(`besu --data-path=${nodePath} public-key export-address --to=${nodePath}/address`);
             execSync(`besu --data-path=${nodePath} public-key export --to=${nodePath}/publickey`);
@@ -133,8 +139,12 @@ export class BesuNetwork {
     // Add bootnode to the network
     async addBootnode(containerName: string, networkName: string, nodeport: string, networkPath: string): Promise<void> {
         try {
+            if (!this.networks[networkName]) {
+                throw new Error(`Network ${networkName} does not exist. Create it first.`);
+            }
+            
             const bootnodeNodePath = `${networkPath}/${containerName}`;
-            const { address: bootnodeAddress, publicKey: bootnodePublicKey } = this.generateBootnodeKeys(bootnodeNodePath);
+            const { address: bootnodeAddress, publicKey: bootnodePublicKey } = this.generateNodeKeys(bootnodeNodePath);
 
             this.createGenesisFile(networkPath, 180395, bootnodeAddress);
             this.createConfigFile(networkPath, "172.20.0.2", bootnodePublicKey.slice(2));
@@ -155,9 +165,12 @@ export class BesuNetwork {
         }
     }
 
-    // Add other client nodes to the network
+    // Add other nodes to the network
     async addNode(containerName: string, networkName: string, nodeport: string, networkPath: string) {
         try {
+            const nodePath = `${networkPath}/${containerName}`;
+            this.generateNodeKeys(nodePath);
+
             execSync(`docker run -d --name ${containerName} \
             --network ${networkName} --label network=${networkName} \
             -p ${nodeport}:8545 -v $(pwd)/${networkPath}:/data \
@@ -189,6 +202,28 @@ export class BesuNetwork {
             console.log(`${containerName} deleted.`);
         } catch (error) {
             console.error(`Error deleting ${containerName}: `, error);
+        }
+    }
+    async getNetworks() {
+        try {
+            console.log("Networks:", this.networks)
+            return this.networks
+        } catch (error) {
+            console.error('Error getting networks:', error)
+        }
+
+    }
+
+    async getNodes(networkName: string) {
+        try {
+            const nodes = this.networks[networkName].nodes;
+            if (!this.networks[networkName]) {
+                throw new Error(`Network ${networkName} does not exist.`);
+            }
+            console.log(`Nodes in ${networkName}:`, nodes);
+            return nodes;
+        } catch (error) {
+            console.error('Error getting nodes:', error)
         }
     }
 

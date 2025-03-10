@@ -4,17 +4,22 @@ const besu = new BesuNetwork();
 
 async function main() {
 
-    //const ini = await besu.reset("besu-nodes")
+    //const ini = await besu.reset("besu-testnet")
 
-    //const creatNet = await besu.createNetwork("besu-testnet", "172.20.0.0/16");
+    const creatNet = await besu.createNetwork("besu-testnet", "172.20.0.0/16");
 
     //const deleteNet = await besu.deleteNetwork("besu-nodes");
 
     //const addBoot = besu.addBootnode("bootnode3","besu-testnet","9991", "networks/besu-testnet")
 
-    //const newNode = await besu.addNode("nodeTesting1", "besu-testnet", "9994", "networks/besu-testnet");
+    
 
     //const deleteNode = await besu.removeNode("testnode");
+
+    const networks = await besu.getNetworks();
+    const nodes = await besu.getNodes("besu-testnet");
+    const newNode = await besu.addNode("nodeTesting1", "besu-testnet", "9994", "networks/besu-testnet");
+    const nodes2 = await besu.getNodes("besu-testnet");
 
     /*const balance = await besu.getBalance("0x0c0184dba86bc763d3f869187835bc3e27add80b");
     console.log("Balance:", balance, "ETH");*/

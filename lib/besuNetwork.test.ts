@@ -54,8 +54,8 @@ describe('BesuNetwork', () => {
 
         await besu.reset('testNetwork');
 
-        expect(mockExecSync).toHaveBeenCalledWith('docker rm -f $(docker ps -a --format "{{.Names}}" --filter "label=network=testNetwork") 2>/dev/null');
-        expect(mockExecSync).toHaveBeenCalledWith('docker network rm testNetwork 2>/dev/null');
+        expect(mockExecSync).toHaveBeenCalledWith('docker rm -f $(docker ps -a --format "{{.Names}}" --filter "label=network=testNetwork") || true');
+        expect(mockExecSync).toHaveBeenCalledWith('docker network rm testNetwork || true');
         expect(mockExecSync).toHaveBeenCalledWith('rm -rf networks/testNetwork');
     });
 
@@ -113,18 +113,26 @@ describe('BesuNetwork', () => {
 
         await besu.addBootnode('bootnodeContainer', 'testNetwork', '30303', 'networks/testNetwork');
 
-        expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining('docker run -d --name bootnodeContainer'));
         expect(mockReadFileSync).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/bootnodeContainer/address'), 'utf8');
         expect(mockReadFileSync).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/bootnodeContainer/publickey'), 'utf8');
+        expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`docker run -d --name bootnodeContainer`));
         expect(mockFs).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/genesis.json'), expect.any(String));
         expect(mockFs).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/config.toml'), expect.any(String));
-        console.log(mockFs.mock.calls);
+        expect(besu['networks']['testNetwork'].nodes).toContain('http://localhost:30303');
     });
 
     //addNode function test
     test('should add a node', async () => {
         const mockExecSync = execSync as jest.Mock;
-        const mockFs = jest.spyOn(require('fs'), 'writeFileSync').mockImplementation(() => { });
+        const mockReadFileSync = jest.spyOn(fs, 'readFileSync').mockImplementation((path: fs.PathOrFileDescriptor) => {
+            if (typeof path === 'string' && path.includes('address')) {
+                return '0x1234567890abcdef';
+            }
+            if (typeof path === 'string' && path.includes('publickey')) {
+                return '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';
+            }
+            return '';
+        });
 
         // Network config
         await besu.createNetwork("testNetwork", "192.168.1.0/24");
@@ -134,6 +142,8 @@ describe('BesuNetwork', () => {
 
         await besu.addNode('nodeContainer', 'testNetwork', '9999', 'networks/testNetwork');
 
+        expect(mockReadFileSync).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/nodeContainer/address'), 'utf8');
+        expect(mockReadFileSync).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/nodeContainer/publickey'), 'utf8');
         expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`docker run -d --name nodeContainer \
             --network testNetwork --label network=testNetwork \
             -p 9999:8545 -v $(pwd)/networks/testNetwork:/data \
@@ -182,6 +192,36 @@ describe('BesuNetwork', () => {
         expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`rm -rf nodeContainer`));
         expect(besu['networks']['testNetwork'].nodes).not.toContain('http://localhost:30303');
     });
+
+    //getNetworks function test
+    test('should get active networks correctly', async () =>{
+        const mockExecSync = execSync as jest.Mock;
+        // Network config
+        await besu.createNetwork("testNetwork", "192.168.1.0/24");
+
+        //addNode simulation
+        mockExecSync.mockReturnValueOnce(null);
+
+        await besu.addNode('nodeContainer', 'testNetwork', '9999', 'networks/testNetwork');
+
+        await besu.getNetworks();
+        expect(besu['networks']).toHaveProperty('testNetwork');
+    });
+
+    //getNodes function test
+    test('should get active nodes correctly', async () =>{
+        const mockExecSync = execSync as jest.Mock;
+        // Network config
+        await besu.createNetwork("testNetwork", "192.168.1.0/24");
+
+        //addNode simulation
+        mockExecSync.mockReturnValueOnce(null);
+
+        await besu.addNode('nodeContainer', 'testNetwork', '9999', 'networks/testNetwork');
+
+        await besu.getNetworks();
+        expect(besu['networks']['testNetwork'].nodes).toContain("http://localhost:9999");
+    })
 
     //getBalance function test
     test('should get balance correctly', async () => {
