@@ -589,66 +589,58 @@ export class BesuClique {
 
 // ToDo: Erase before release
 
-(async () => {
-  try {
-    console.log('Starting...');
-    const besuClique = new BesuClique();
+// (async () => {
+//   try {
+//     console.log('Starting...');
 
-    besuClique.addNode({ name: 'Node-1', portJSON: 8545, portWS: 8546, portP2P: 30303 });
-    besuClique.addNode({ name: 'Node-2', portJSON: 8555, portWS: 8556, portP2P: 30304 });
-    besuClique.addNode({ name: 'Node-3', portJSON: 8565, portWS: 8566, portP2P: 30305 });
+//     const besuClique = new BesuClique();
+//     besuClique.addNode({ name: 'Node-1', portJSON: 8545, portWS: 8546, portP2P: 30303 });
+//     besuClique.addNode({ name: 'Node-2', portJSON: 8555, portWS: 8556, portP2P: 30304 });
+//     besuClique.addNode({ name: 'Node-3', portJSON: 8565, portWS: 8566, portP2P: 30305 });
 
-    // console.log(await besuClique.sendTransaction( "0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C", besuClique.getPrivateKey('f17f52151EbEF6C7334FAD080c5704D77216b732'), 100));
-    // console.log(await besuClique.getBalance('0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C'));
+//     // console.log(await besuClique.sendTransaction( "0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C", besuClique.getPrivateKey('f17f52151EbEF6C7334FAD080c5704D77216b732'), 100));
+//     // console.log(await besuClique.getBalance('0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C'));
 
-    besuClique.getNodes()[0].address = await besuClique.generateAddress(besuClique.getNodes()[0]);
-    besuClique.createGenesis(besuClique.getNodes()[0].address!);
-    await besuClique.createNetwork();
+//     besuClique.getNodes()[0].address = await besuClique.generateAddress(besuClique.getNodes()[0]);
+//     besuClique.createGenesis(besuClique.getNodes()[0].address!);
+//     await besuClique.createNetwork();
 
-    try {
-      const status = await besuClique.getNodeStatus(besuClique.getNodes()[0]);
-      if (status === 'running') {
-        try {
-          const result = await besuClique.stopNode(besuClique.getNodes()[0])
-          if (result === 'Node stopped') {
-            try {
-              const result = await besuClique.deleteNode(besuClique.getNodes()[0]);
-              if (result === 'Node deleted') {
-                besuClique.getNodes()[0] = await besuClique.createNodeMaster(besuClique.getNodes()[0]);
-              }
-            } catch (error) {
-              console.log(error);
-            }
-          }
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    } catch (error) {
-      besuClique.getNodes()[0] = await besuClique.createNodeMaster(besuClique.getNodes()[0]);
-    }
+//     try {
+//       const status = await besuClique.getNodeStatus(besuClique.getNodes()[0]);
+//       if (status === 'running') {
+//         const result = await besuClique.stopNode(besuClique.getNodes()[0])
+//         if (result === 'Node stopped') {
+//           const result = await besuClique.deleteNode(besuClique.getNodes()[0]);
+//           if (result === 'Node deleted') {
+//             besuClique.getNodes()[0] = await besuClique.createNodeMaster(besuClique.getNodes()[0]);
+//           }
+//         }
+//       }
+//     } catch (error) {
+//       besuClique.getNodes()[0] = await besuClique.createNodeMaster(besuClique.getNodes()[0]);
+//     }
 
-    besuClique.getNodes()[0] = await besuClique.setNodeEnode(besuClique.getNodes()[0]);
+//     besuClique.getNodes()[0] = await besuClique.setNodeEnode(besuClique.getNodes()[0]);
 
-    if (besuClique.getNodes()[0].enode != '') {
-      besuClique.getNodes()[0] = await besuClique.getNodeDockerIP(besuClique.getNodes()[0]);
-      if (besuClique.getNodes()[0].dockerIP != '') {
-        besuClique.getNodes()[1] = await besuClique.createNodeSlave(besuClique.getNodes()[1], besuClique.getNodes()[0].enode!);
-      }
-    }
+//     if (besuClique.getNodes()[0].enode != '') {
+//       besuClique.getNodes()[0] = await besuClique.getNodeDockerIP(besuClique.getNodes()[0]);
+//       if (besuClique.getNodes()[0].dockerIP != '') {
+//         besuClique.getNodes()[1] = await besuClique.createNodeSlave(besuClique.getNodes()[1], besuClique.getNodes()[0].enode!);
+//       }
+//     }
 
-    // console.log(await besuClique.getNodeStatus(besuClique.getNodes()[2]));
+//     // console.log(await besuClique.getNodeStatus(besuClique.getNodes()[2]));
 
-    // do
-    //   for (let i = 0; i < besuClique.getNodesCount(); i++) {
-    //     console.log(`Status ${i}: `, await besuClique.getNodeStatus(besuClique.getNodes()[i]));
-    //     besuClique.sleep(2500);
-    //   }
-    // while (await besuClique.getNodeStatus(besuClique.getNodes()[0]) !== 'running' && await besuClique.getNodeStatus(besuClique.getNodes()[1]) !== 'running');
+//     // do
+//     //   for (let i = 0; i < besuClique.getNodesCount(); i++) {
+//     //     console.log(`Status ${i}: `, await besuClique.getNodeStatus(besuClique.getNodes()[i]));
+//     //     besuClique.sleep(2500);
+//     //   }
+//     // while (await besuClique.getNodeStatus(besuClique.getNodes()[0]) !== 'running' && await besuClique.getNodeStatus(besuClique.getNodes()[1]) !== 'running');
 
-    console.log('Done');
-  } catch (error) {
-    console.log(error);
-  }
-})();
+//     console.log('Done');
+//   } catch (error) {
+//     console.log(error);
+//   }
+// })();
 
