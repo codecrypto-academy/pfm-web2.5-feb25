@@ -1,0 +1,12 @@
+# Ignorar todo
+*
+
+# Excepto los archivos específicos en lib/src
+!lib/
+!lib/src/
+!lib/src/index.ts
+!lib/src/types.ts
+!lib/src/defaultConfig.ts
+
+# Excluir explícitamente __tests__
+lib/src/__tests__/
