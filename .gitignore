@@ -1,3 +1,12 @@
 .vscode
+.DS_Store
+Thumbs.db
+
 /lib/node_modules
 /lib/coverage
+/lib/dist
+
+/lib/node*
+
+/lib/*.toml
+genesis.json
