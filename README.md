@@ -54,6 +54,85 @@ chmod +x script.sh
 - `config-fullnode.toml`: Full node configuration
 - Node directories with keys and addresses
 
+## Uso de la librería
+
+Esta librería proporciona funciones modulares para configurar y gestionar una red Hyperledger Besu. A continuación se muestra cómo utilizarla:
+
+### Importación
+
+```typescript
+import {
+  setupBesuNetwork,
+  getBalance,
+  sendTransaction,
+  addNode,
+  removeNode,
+} from "./lib/src";
+```
+
+### Configurar una red
+
+```typescript
+// Usar la configuración por defecto
+await setupBesuNetwork();
+
+// O utilizar una configuración personalizada
+import { NetworkConfigInterface } from "./lib/src/types";
+
+const miConfig: NetworkConfigInterface = {
+  network: {
+    networkName: "mi-red-besu",
+    basePort: 8545,
+  },
+  chain: {
+    chainId: 1337,
+    // otros parámetros...
+  },
+  nodes: {
+    validators: 1,
+    fullnodes: 3,
+  },
+  // ...resto de configuración
+};
+
+await setupBesuNetwork(miConfig);
+```
+
+### Consultar saldo
+
+```typescript
+const direccion = "0x123...";
+const saldo = await getBalance(direccion);
+console.log(`Saldo: ${saldo} ETH`);
+```
+
+### Enviar transacción
+
+```typescript
+// Usando valores por defecto
+const hashTx = await sendTransaction();
+
+// O con parámetros específicos
+const hashTx = await sendTransaction("1.5", "0xDestination...");
+```
+
+### Gestionar nodos
+
+```typescript
+// Añadir un nuevo nodo
+const nuevoNodo = await addNode();
+console.log(`Nodo añadido: ${nuevoNodo.nodeId}, URL: ${nuevoNodo.nodeUrl}`);
+
+// Eliminar un nodo (excepto el validador)
+await removeNode(3); // Elimina el nodo3
+```
+
+### Otras funciones disponibles
+
+- `cleanExistingFiles()`: Limpia archivos y contenedores Docker existentes
+- `createDockerNetwork()`: Crea una red Docker para los nodos
+- `showNetworkInfo()`: Muestra información sobre la red configurada
+
 ## Troubleshooting
 
 - If dependencies are missing, the script will detect this and provide installation instructions
