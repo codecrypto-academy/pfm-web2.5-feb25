@@ -1,9 +1,5 @@
 import { NetworkConfigInterface } from './types';
 
-/**
- * Configuración predeterminada para la red Besu
- * Esta configuración puede ser usada como base y modificada según necesidades
- */
 export const defaultNetworkConfig: NetworkConfigInterface = {
   nodes: {
     validators: 1,
@@ -32,8 +28,5 @@ export const defaultNetworkConfig: NetworkConfigInterface = {
     to: '0x125f85D02912c62E7E63FFdc12F1f4511B14c3DC',
     amount: '50',
     perform: true,
-  },
-  execution: {
-    performDemonstration: true,
   },
 };

@@ -1,77 +1,56 @@
-/**
- * Interfaz para la configuración de red Besu
- */
 export interface NetworkConfigInterface {
-  /**
-   * Configuración de nodos
-   */
+  // Node configuration
   nodes: {
-    /** Número de nodos validadores */
+    // Number of validator nodes
     validators: number;
-    /** Número de nodos completos (no validadores) */
+    // Number of full nodes (non-validators)
     fullnodes: number;
   };
 
-  /**
-   * Configuración de la red
-   */
+  // Network configuration
   network: {
-    /** Nombre de la red Docker */
+    // Docker network name
     networkName: string;
-    /** Puerto base para la API HTTP (se incrementará por cada nodo) */
+    // Base port for HTTP API (will be incremented for each node)
     basePort: number;
   };
 
-  /**
-   * Especificaciones técnicas
-   */
+  // Technical specifications
   tech: {
-    /** Imagen Docker a utilizar */
+    // Docker image to use
     dockerImage: string;
-    /** Tiempo de espera para iniciar el validador (segundos) */
+    // Wait time for validator startup (seconds)
     validatorStartupTime: number;
   };
 
-  /**
-   * Configuración de la cadena (genesis)
-   */
+  // Chain configuration (genesis)
   chain: {
-    /** ID de la cadena (chainID) */
+    // Chain ID
     chainId: number;
-    /** Bloque en el que se activa la actualización de Londres */
+    // Block at which London upgrade is activated
     londonBlock: number;
-    /** Límite de gas */
+    // Gas limit
     gasLimit: string;
-    /** Dificultad inicial */
+    // Initial difficulty
     difficulty: string;
-    /** Configuración del algoritmo de consenso Clique */
+    // Clique consensus algorithm configuration
     clique: {
-      /** Tiempo entre bloques en segundos */
+      // Block time in seconds
       blockPeriodSeconds: number;
-      /** Longitud de época */
+      // Epoch length
       epochLength: number;
-      /** Si se deben crear bloques vacíos */
+      // Whether to create empty blocks
       createEmptyBlocks: boolean;
     };
   };
 
-  /**
-   * Configuración de la transacción de prueba
-   */
+  // Test transaction configuration
   transaction: {
-    /** Dirección destino para la transacción de prueba */
+    // Destination address for test transaction
     to: string;
-    /** Cantidad de ETH para enviar */
+    // Amount of ETH to send
     amount: string;
-    /** Si se debe realizar una transacción de prueba */
+    // Whether to perform a test transaction
     perform: boolean;
-  };
-
-  /**
-   * Opciones de ejecución
-   */
-  execution: {
-    /** Si se debe realizar el ejemplo de agregar/quitar un nodo */
-    performDemonstration: boolean;
   };
 }

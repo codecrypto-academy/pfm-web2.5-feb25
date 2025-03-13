@@ -1,36 +1,8 @@
-/**
- * Utilizamos doMock para asegurarnos que el mock tome efecto antes de cualquier importación
- * y modificamos la estructura del mock para que coincida exactamente con el uso en index.ts
- */
-jest.doMock('ethers', () => {
-  // La clave es que BigNumber tiene que ser una clase con un método estático 'from'
-  // que devuelva un objeto con un método 'toString' y sea compatible con formatEther
-  const mockBigNumberObject = {
-    toString: () => '50000000000000000000'
-  };
-
-  // BigNumber debe ser un objeto con un método estático 'from' que devuelve el objeto mockBigNumber
-  const BigNumber = function() {};
-  BigNumber.from = jest.fn().mockReturnValue(mockBigNumberObject);
-
-  return {
-    BigNumber: BigNumber,
-    utils: {
-      parseEther: jest.fn().mockImplementation(() => ({
-        toHexString: () => '0x123456'
-      })),
-      formatEther: jest.fn().mockReturnValue('50.0')
-    }
-  };
-});
-
-// Ahora importamos las dependencias estándar
 import fs from 'fs-extra';
 import { execSync } from 'child_process';
 import axios from 'axios';
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 
-// Importante: importamos el código DESPUÉS de mockear ethers
 import {
   cleanExistingFiles,
   createDockerNetwork,
@@ -46,7 +18,6 @@ import {
   sendTransaction,
   addNode,
   removeNode,
-  setupBesuNetwork,
   defaultNetworkConfig,
 } from '../index';
 
@@ -166,11 +137,8 @@ describe('Besu Network Library', () => {
       createGenesisFile(defaultNetworkConfig);
 
       expect(fs.readFileSync).toHaveBeenCalledWith('node1/address', 'utf8');
-      // Cambiamos la expectativa para que coincida con la implementación real
       expect(fs.writeFileSync).toHaveBeenCalled();
-      // Verificamos que el primer argumento sea 'genesis.json'
       expect((fs.writeFileSync as jest.Mock).mock.calls[0][0]).toBe('genesis.json');
-      // Verificamos que el segundo argumento contenga chainID sin ser tan estrictos con el formato
       expect((fs.writeFileSync as jest.Mock).mock.calls[0][1]).toContain('chainID');
     });
   });
@@ -179,11 +147,8 @@ describe('Besu Network Library', () => {
     it('should create validator config file with correct content', () => {
       createValidatorConfig();
 
-      // Cambiamos la expectativa para que coincida con la implementación real
       expect(fs.writeFileSync).toHaveBeenCalled();
-      // Verificamos que el primer argumento sea 'config.toml'
       expect((fs.writeFileSync as jest.Mock).mock.calls[0][0]).toBe('config.toml');
-      // Verificamos que el segundo argumento contenga genesis-file sin ser tan estrictos
       expect((fs.writeFileSync as jest.Mock).mock.calls[0][1]).toContain('genesis-file');
     });
   });
@@ -206,7 +171,6 @@ describe('Besu Network Library', () => {
 
   describe('getValidatorEnode', () => {
     it('should retrieve the validator enode', () => {
-      // Mocks específicos para esta función
       (execSync as jest.Mock)
         .mockImplementationOnce(() => '172.17.0.2')
         .mockImplementationOnce(() => '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef');
@@ -240,10 +204,8 @@ describe('Besu Network Library', () => {
       const mockEnode = 'enode://abcdef@172.17.0.2:30303';
       createFullnodeConfig(mockEnode);
 
-      // Similar a los casos anteriores, simplificamos la verificación
       expect(fs.writeFileSync).toHaveBeenCalled();
       expect((fs.writeFileSync as jest.Mock).mock.calls[0][0]).toBe('config-fullnode.toml');
-      // Verificamos que el contenido incluya el enode
       expect((fs.writeFileSync as jest.Mock).mock.calls[0][1]).toContain(mockEnode);
     });
   });
@@ -254,7 +216,6 @@ describe('Besu Network Library', () => {
 
       launchFullnodeContainers(config);
 
-      // Should launch 3 fullnodes (node2, node3, node4)
       expect(execSync).toHaveBeenCalledTimes(3);
       expect(execSync).toHaveBeenCalledWith(
         expect.stringContaining('--name node2')
@@ -287,9 +248,8 @@ describe('Besu Network Library', () => {
   describe('getBalance', () => {
     it('should get and format balance correctly', async () => {
       const mockAddress = '0x1234567890abcdef';
-      // Cambiamos el mock para que devuelva un valor hexadecimal que represente exactamente 0.01 ETH
       (axios.post as any).mockResolvedValueOnce({
-        data: { result: '0x2386f26fc10000' } // Exactamente 0.01 ETH en hexadecimal
+        data: { result: '0x2386f26fc10000' }
       });
 
       const balance = await getBalance(mockAddress, defaultNetworkConfig);
@@ -310,12 +270,10 @@ describe('Besu Network Library', () => {
 
   describe('sendTransaction', () => {
     beforeEach(() => {
-      // Configuración adicional para este grupo de tests
       (fs.mkdirSync as jest.Mock).mockImplementation(() => {});
       (fs.writeFileSync as jest.Mock).mockImplementation(() => {});
       (process.chdir as jest.Mock) = jest.fn();
 
-      // Mock de axios específico para devoluciones diferentes
       (axios.post as any)
         .mockImplementation((url, data) => {
           if (data.method === 'eth_getTransactionCount') {
@@ -368,7 +326,6 @@ describe('Besu Network Library', () => {
     it('should create fullnode config if it does not exist', async () => {
       (fs.existsSync as jest.Mock).mockImplementationOnce(() => false);
 
-      // Mock getValidatorEnode de forma correcta
       const originalGetValidatorEnode = getValidatorEnode;
       const mockGetValidatorEnode = jest.fn().mockReturnValue('enode://abcdef@172.17.0.2:30303');
       global.getValidatorEnode = mockGetValidatorEnode;
@@ -376,7 +333,6 @@ describe('Besu Network Library', () => {
       try {
         await addNode(defaultNetworkConfig);
       } finally {
-        // Restaurar la función original
         global.getValidatorEnode = originalGetValidatorEnode;
       }
     });

@@ -6,10 +6,8 @@ import { ethers } from 'ethers';
 import { NetworkConfigInterface } from './types';
 import { defaultNetworkConfig } from './defaultConfig';
 
-// Exportar la configuración predeterminada para que el usuario pueda usarla
 export { defaultNetworkConfig };
 
-// Helper: Print messages
 export const printMessage = (message: string): void => {
   console.log(`\x1b[32m[INFO]\x1b[0m ${message}`);
 };
@@ -36,7 +34,7 @@ export const cleanExistingFiles = async (): Promise<void> => {
   printMessage("Cleaning existing files and folders...");
   
   try {
-    // Stop and remove existing Docker containers using Docker CLI
+    // Stop and remove existing Docker containers 
     printMessage("Stopping and removing existing Docker containers...");
     
     // Get container IDs and handle empty result
@@ -51,7 +49,6 @@ export const cleanExistingFiles = async (): Promise<void> => {
             execSync(`docker rm ${containerId}`);
           } catch (err) {
             printWarning(`Error stopping/removing container ${containerId}: ${err}`);
-            // Continue with other containers
           }
         }
       }
@@ -60,8 +57,6 @@ export const cleanExistingFiles = async (): Promise<void> => {
     }
     
     printMessage("Docker containers removed.");
-    
-    // Remove configuration files in current directory (NOT package.json of our project)
     printMessage("Removing configuration files...");
     const filesToRemove = [
       'genesis.json', 
@@ -108,7 +103,7 @@ export const createDockerNetwork = (config: NetworkConfigInterface = defaultNetw
   printMessage(`Creating Docker network '${networkName}'...`);
   
   try {
-    // Check if network exists using Docker CLI
+    // Check if network exists 
     try {
       const networkList = execSync("docker network ls --format '{{.Name}}'").toString();
       
@@ -117,11 +112,10 @@ export const createDockerNetwork = (config: NetworkConfigInterface = defaultNetw
         return;
       }
     } catch (error) {
-      // Continue if we can't list networks
       printWarning("Could not check existing networks, attempting to create new one");
     }
     
-    // Create network using Docker CLI with the name from config
+    // Create network with the name from config
     execSync(`docker network create ${networkName}`);
     printMessage(`Network '${networkName}' created successfully.`);
   } catch (error) {
@@ -140,7 +134,7 @@ export const createNodeDirectory = (nodeNum: number): void => {
     // Create directory if it doesn't exist
     fs.mkdirpSync(nodeDir);
     
-    // Generate key and address for the node (using Besu via execSync)
+    // Generate key and address for the node using Besu
     printMessage(`Generating key and address for node ${nodeNum}...`);
     execSync(`besu --data-path=${nodeDir} public-key export-address --to=${nodeDir}/address`);
     
@@ -160,7 +154,6 @@ export const createGenesisFile = (config: NetworkConfigInterface = defaultNetwor
     const nodeAddress = fs.readFileSync('node1/address', 'utf8').trim();
     const nodeAddressStrip = nodeAddress.replace('0x', '');
     
-    // Create the genesis.json file using the configuration
     const genesisFile = {
       config: {
         chainID: config.chain.chainId,
@@ -237,7 +230,7 @@ export const launchValidatorNode = (config: NetworkConfigInterface = defaultNetw
     const dockerImage = config.tech.dockerImage;
     const networkName = config.network.networkName;
     
-    // Launch validator node using Docker CLI with execSync
+    // Launch validator node
     execSync(`
       docker run -d \
         --name node1 \
@@ -267,7 +260,7 @@ export const getValidatorEnode = (): string => {
   printMessage("Getting the enode of the validator node...");
   
   try {
-    // Get the IP of the validator node using Docker CLI
+    // Get the IP of the validator node
     const nodeIP = execSync(`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' node1`)
       .toString().trim();
     
@@ -277,9 +270,7 @@ export const getValidatorEnode = (): string => {
     
     printMessage(`Validator node IP: ${nodeIP}`);
     
-    // Export the public key using the corrected approach
     printMessage("Exporting the public key with besu...");
-    // Using the solution that works as suggested in the prompt
     const nodePubKey = execSync(`besu --data-path=node1 public-key export 2>/dev/null | tail -1`)
       .toString().trim().replace(/^0x/, '');
     
@@ -343,9 +334,9 @@ export const launchFullnodeContainers = (config: NetworkConfigInterface = defaul
     const dockerImage = config.tech.dockerImage;
     const networkName = config.network.networkName;
     
-    // Launch the fullnodes using Docker CLI with execSync
+    // Launch the fullnodes 
     for (let i = 0; i < fullnodeCount; i++) {
-      const nodeNum = 2 + i; // Empezar desde node2 (después del validador)
+      const nodeNum = 2 + i;
       const nodeName = `node${nodeNum}`;
       const port = basePort + nodeNum - 1;
       
@@ -382,7 +373,6 @@ export const showNetworkInfo = (config: NetworkConfigInterface = defaultNetworkC
   printMessage("Node access:");
   printMessage(`- Validator node: http://localhost:${config.network.basePort}`);
   
-  // Mostrar información de cada nodo completo
   for (let i = 0; i < config.nodes.fullnodes; i++) {
     const nodeNum = 2 + i;
     const port = config.network.basePort + nodeNum - 1;
@@ -408,45 +398,41 @@ export const getBalance = async (address: string, config: NetworkConfigInterface
       return '0.00';
     }
     
-    // Implementación más robusta para convertir el balance de wei a ETH
+    // Method 1: Manual conversion (more efficient)
     try {
-      // Convertir el balance hexadecimal a decimal
       const balanceWei = parseInt(balanceHex, 16).toString();
       
-      // Convertir wei a ETH (1 ETH = 10^18 wei)
-      // Si el balance tiene menos de 18 dígitos, añadir ceros a la izquierda
-      const paddedBalanceWei = balanceWei.padStart(19, '0');
+      // parseInt for small amounts
+      if (balanceWei.length <= 30) {
+        const paddedBalanceWei = balanceWei.padStart(19, '0');
+        const integerPart = paddedBalanceWei.slice(0, -18) || '0';
+        const decimalPart = paddedBalanceWei.slice(-18).substring(0, 2).padEnd(2, '0');
+        return `${integerPart}.${decimalPart}`;
+      }
       
-      // Dividir en parte entera y decimal
-      const integerPart = paddedBalanceWei.slice(0, -18) || '0';
-      const decimalPart = paddedBalanceWei.slice(-18).substring(0, 2).padEnd(2, '0');
-      
-      // Formatear el resultado con 2 decimales
-      return `${integerPart}.${decimalPart}`;
+      // If we reach here, the number is too large for parseInt
+      // Let it fail and go to the fallback method
+      throw new Error("Number too large for manual conversion");
     } catch (conversionError) {
-      // Fallback: intentar usar ethers si está disponible
+      // Method 2: Use ethers (more robust, especially for large numbers)
       try {
         const weiBalance = ethers.BigNumber.from(balanceHex);
         const ethBalance = ethers.utils.formatEther(weiBalance);
         return parseFloat(ethBalance).toFixed(2);
       } catch (ethersError) {
-        printError(`Error converting balance with ethers: ${ethersError}`);
-        return '0.00'; // Valor predeterminado en caso de error
+        printError(`Error converting balance with ethers: ${ethersError instanceof Error ? ethersError.message : String(ethersError)}`);
+        
+        // Method 3: Last resort - return 0 if everything else fails
+        return '0.00';
       }
     }
   } catch (error) {
-    printError(`Error getting balance: ${error instanceof Error ? error.message : String(error)}`);
-    throw error;
+    // This catch handles errors in the API call
+    printError(`Error getting balance from node: ${error instanceof Error ? error.message : String(error)}`);
+    throw error; // Propagate the error for the caller to handle
   }
 };
 
-/**
- * Envía una transacción desde la cuenta del nodo validador a una dirección destino
- * @param customAmount Cantidad opcional de ETH a enviar (por defecto usa el valor de config)
- * @param customDestination Dirección opcional de destino (por defecto usa el valor de config)
- * @param config Configuración personalizada de la red
- * @returns Promise con el hash de la transacción enviada
- */
 export const sendTransaction = async (
   customAmount?: string,
   customDestination?: string,
@@ -505,32 +491,32 @@ console.log(serializedTx);`;
     const validatorAddress = fs.readFileSync(path.join(workingDir, 'node1/address'), 'utf8').trim();
     const privateKey = fs.readFileSync(path.join(workingDir, 'node1/key'), 'utf8').trim().replace('0x', '');
     
-    // Convertir ETH a wei sin depender de ethers
+    // Convert ETH to wei without depending on ethers
     let amountWei: string;
     try {
-      // Intentar usar ethers si está disponible
+      // Try to use ethers if available
       try {
         amountWei = ethers.utils.parseEther(amountEth).toHexString();
       } catch (ethersError) {
-        // Implementación manual si ethers falla
+        // Manual implementation if ethers fails
         printWarning(`Using manual ETH to wei conversion: ${ethersError}`);
         
-        // Parsear el valor como número de punto flotante
+        // Parse the value as a floating-point number
         const ethValue = parseFloat(amountEth);
         
-        // Calcular el valor en wei (1 ETH = 10^18 wei)
+        // Calculate the value in wei (1 ETH = 10^18 wei)
         const weiValue = Math.floor(ethValue * 1e18);
         
-        // Convertir a hexadecimal con prefijo '0x'
+        // Convert to hexadecimal with '0x' prefix
         amountWei = `0x${weiValue.toString(16)}`;
       }
     } catch (error) {
       printError(`Error converting ETH to wei: ${error}`);
-      // Usar un valor predeterminado en caso de error (0.1 ETH)
+      // Use a default value in case of error (0.1 ETH)
       amountWei = '0x16345785d8a0000';
     }
     
-    // Get the nonce for the transaction - Usar puerto configurado
+    // Get the nonce for the transaction
     const validatorPort = config.network.basePort;
     const nonceResponse = await axios.post(`http://localhost:${validatorPort}`, {
       jsonrpc: '2.0',
@@ -582,16 +568,11 @@ console.log(serializedTx);`;
   }
 };
 
-/**
- * Añade un nuevo nodo completo a la red existente
- * @param config Configuración de la red
- * @returns Información sobre el nodo añadido
- */
 export const addNode = async (
   config: NetworkConfigInterface = defaultNetworkConfig
 ): Promise<{nodeId: string, nodeUrl: string}> => {
   try {
-    // Encontrar el número más alto actual de nodos
+    // Find the current highest node number
     const dirs = fs.readdirSync('.')
       .filter(file => file.startsWith('node') && fs.statSync(file).isDirectory() && !file.includes('node_modules'));
     
@@ -600,19 +581,19 @@ export const addNode = async (
       return match ? parseInt(match[1], 10) : 0;
     });
     
-    // Determinar el siguiente número de nodo
+    // Determine the next node number
     const nextNodeNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
     const nodeName = `node${nextNodeNumber}`;
     const nodePort = config.network.basePort + nextNodeNumber - 1;
     
     printMessage(`Adding new fullnode: ${nodeName}...`);
     
-    // Crear directorio y generar claves para el nuevo nodo
+    // Create directory and generate keys for the new node
     createNodeDirectory(nextNodeNumber);
     
-    // Asegurarse de que se ha creado el archivo de configuración para fullnodes
+    // Make sure the configuration file for fullnodes has been created
     if (!fs.existsSync('config-fullnode.toml')) {
-      // Obtener el enode de un nodo validador existente para la conexión
+      // Get the enode of an existing validator node for the connection
       try {
         const validatorEnode = getValidatorEnode();
         createFullnodeConfig(validatorEnode);
@@ -621,7 +602,7 @@ export const addNode = async (
       }
     }
     
-    // Lanzar el contenedor para el nuevo nodo completo
+    // Launch the container for the new fullnode
     const workingDir = process.cwd();
     execSync(`
       docker run -d \
@@ -647,24 +628,19 @@ export const addNode = async (
   }
 };
 
-/**
- * Elimina un nodo existente de la red
- * @param nodeNumber Número del nodo a eliminar
- * @returns Promise<void>
- */
 export const removeNode = async (nodeNumber: number): Promise<void> => {
   try {
     const nodeName = `node${nodeNumber}`;
     
     printMessage(`Removing node ${nodeName}...`);
     
-    // Verificar que no estamos intentando eliminar el validador principal (node1)
+    // Verify we're not trying to remove the main validator node (node1)
     if (nodeNumber === 1) {
       printError("Cannot remove validator node (node1). This would break the network.");
       throw new Error("Cannot remove validator node");
     }
     
-    // Verificar que el nodo existe
+    // Verify the node exists
     try {
       execSync(`docker inspect ${nodeName} > /dev/null 2>&1`);
     } catch (error) {
@@ -672,14 +648,14 @@ export const removeNode = async (nodeNumber: number): Promise<void> => {
       throw new Error(`Node ${nodeName} not found`);
     }
     
-    // Parar y eliminar el contenedor
+    // Stop and remove the container
     printMessage(`Stopping container ${nodeName}...`);
     execSync(`docker stop ${nodeName}`);
     
     printMessage(`Removing container ${nodeName}...`);
     execSync(`docker rm ${nodeName}`);
     
-    // Eliminar el directorio del nodo
+    // Remove the node directory
     if (fs.existsSync(nodeName)) {
       printMessage(`Removing node directory ${nodeName}...`);
       fs.removeSync(nodeName);
@@ -692,21 +668,10 @@ export const removeNode = async (nodeNumber: number): Promise<void> => {
   }
 };
 
-/**
- * Configura una red Hyperledger Besu con los parámetros especificados
- * @param config Configuración para la red (opcional, usa defaultNetworkConfig por defecto)
- * @returns Promise con información sobre la red creada
- */
 export const setupBesuNetwork = async (
   config?: NetworkConfigInterface
-): Promise<{ 
-  validatorUrl: string, 
-  nodeUrls: string[],
-  totalNodes: number,
-  validators: number,
-  fullNodes: number
-}> => {
-  // Usar la configuración proporcionada o la predeterminada
+): Promise<void> => {
+  // Use the provided configuration or the default one
   const activeConfig = config || defaultNetworkConfig;
   
   printMessage("=== Setting up Hyperledger Besu network ===");
@@ -718,79 +683,32 @@ export const setupBesuNetwork = async (
     // Create Docker network
     createDockerNetwork(activeConfig);
     
-    // 3. Crear directorios para todos los nodos
+    // Create directories for all nodes
     const totalNodes = activeConfig.nodes.validators + activeConfig.nodes.fullnodes;
     for (let i = 1; i <= totalNodes; i++) {
       createNodeDirectory(i);
     }
     
-    // 4. Crear configuración del validador
+    // Create validator configuration
     createGenesisFile(activeConfig);
     createValidatorConfig();
     
-    // 5. Lanzar el nodo validador
+    // Launch the validator node
     launchValidatorNode(activeConfig);
     
-    // 6. Obtener el enode del validador
+    // Get the validator enode
     const enode = getValidatorEnode();
     
-    // 7. Configurar los nodos completos
+    // Configure the full nodes
     createFullnodeConfig(enode);
     
-    // 8. Lanzar los nodos completos
+    // Launch the full nodes
     launchFullnodeContainers(activeConfig);
     
-    // 9. Mostrar información de la red
+    // Show network information
     showNetworkInfo(activeConfig);
     
-    // 10. Si está habilitado, realizar una transacción de prueba y comprobar balances
-    if (activeConfig.transaction.perform) {
-      printMessage("=== Realizando prueba de funcionalidad ===");
-      
-      // Leer la dirección del validador
-      const validatorAddress = fs.readFileSync('node1/address', 'utf8').trim();
-      
-      // Comprobar el balance del validador
-      printMessage(`Comprobando balance del validador (${validatorAddress})...`);
-      const validatorBalance = await getBalance(validatorAddress, activeConfig);
-      printMessage(`Balance del validador: ${validatorBalance} ETH`);
-      
-      // Enviar una transacción
-      printMessage(`Enviando transacción de prueba a ${activeConfig.transaction.to}...`);
-      const txHash = await sendTransaction(undefined, undefined, activeConfig);
-      printMessage(`Transacción enviada con éxito: ${txHash}`);
-      
-      // Esperar a que la transacción sea minada
-      printMessage("Esperando a que la transacción sea minada (10 segundos)...");
-      await new Promise(resolve => setTimeout(resolve, 10000));
-      
-      // Comprobar el balance del destinatario después de esperar
-      printMessage(`Comprobando balance del destinatario (${activeConfig.transaction.to})...`);
-      const recipientBalance = await getBalance(activeConfig.transaction.to, activeConfig);
-      printMessage(`Balance del destinatario: ${recipientBalance} ETH`);
-    }
-    
-    // 11. Retornar información estructurada sobre la red creada
-    const nodeUrls = [];
-    // URL para el validador
-    nodeUrls.push(`http://localhost:${activeConfig.network.basePort}`);
-    
-    // URLs para los nodos completos
-    for (let i = 0; i < activeConfig.nodes.fullnodes; i++) {
-      const nodeNum = 2 + i;
-      const port = activeConfig.network.basePort + nodeNum - 1;
-      nodeUrls.push(`http://localhost:${port}`);
-    }
-    
     printMessage("Besu network setup completed successfully!");
-    
-    return {
-      validatorUrl: `http://localhost:${activeConfig.network.basePort}`,
-      nodeUrls: nodeUrls,
-      totalNodes: totalNodes,
-      validators: activeConfig.nodes.validators,
-      fullNodes: activeConfig.nodes.fullnodes
-    };
   } catch (error) {
     printError(`Error in network setup: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
@@ -816,17 +734,10 @@ export default {
   setupBesuNetwork
 };
 
-// Ejecutar la función principal si este archivo se ejecuta directamente (no importado como módulo)
 if (require.main === module) {
   setupBesuNetwork()
     .then((networkInfo) => {
       printMessage('Script completed successfully');
-      printMessage(`Created network with ${networkInfo.totalNodes} nodes (${networkInfo.validators} validators, ${networkInfo.fullNodes} fullnodes)`);
-      printMessage(`Validator node available at: ${networkInfo.validatorUrl}`);
-      printMessage('Node URLs:');
-      networkInfo.nodeUrls.forEach((url, i) => {
-        printMessage(`- Node ${i+1}: ${url}`);
-      });
     })
     .catch((error) => {
       printError(`Script failed: ${error instanceof Error ? error.message : String(error)}`);
