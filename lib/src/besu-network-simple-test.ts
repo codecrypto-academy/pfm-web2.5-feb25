@@ -77,9 +77,9 @@ async function main() {
     }
     
     // Detener y eliminar la red
-    console.log('¿Desea detener la red? (Comentar las siguientes líneas si desea mantenerla en ejecución)');
-    await network.stopNetwork();
-    console.log('Red detenida correctamente');
+    //console.log('¿Desea detener la red? (Comentar las siguientes líneas si desea mantenerla en ejecución)');
+    //await network.stopNetwork();
+    //console.log('Red detenida correctamente');
     
     // Descomentar para eliminar completamente la red
     // console.log('Eliminando la red...');

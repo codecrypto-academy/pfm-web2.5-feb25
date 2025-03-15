@@ -6,6 +6,10 @@ import * as path from 'path';
 import { exec, spawn, execSync } from 'child_process';
 import { promisify } from 'util';
 import * as http from 'http'
+import { TransactionFactory, LegacyTransaction } from '@ethereumjs/tx';
+import { Common } from '@ethereumjs/common';
+import { Address } from '@ethereumjs/util';
+import { ethers } from 'ethers';
 
 const execAsync = promisify(exec);
 
@@ -258,6 +262,15 @@ class BesuNetwork {
         path.join(nodeDir, 'key'),
         node.privateKey.slice(2) // Eliminar prefijo 0x
       );
+
+      // Asegurar que los permisos son correctos (si estás en un sistema tipo Unix)
+      if (process.platform !== 'win32') {
+        try {
+          fs.chmodSync(path.join(nodeDir, 'key'), 0o600); // Solo lectura/escritura para el propietario
+        } catch (error) {
+          console.warn(`No se pudieron cambiar los permisos del archivo de clave: ${error}`);
+        }
+      }
       
       // Guardar dirección
       fs.writeFileSync(
@@ -290,19 +303,20 @@ generateGenesisConfig(options: GenesisOptions = {}): any {
   const genesisConfig: {
     config: {
       chainId: number;
+      londonBlock: number;   // Agregar soporte para London
       constantinopleForkBlock: number;
       clique: {
         blockPeriodSeconds: number;
         epochLength: number;
       };
     };
-    difficulty: string;         // Campo requerido
-    mixHash: string;            // Campo requerido para algunos modos
-    gasLimit: string;           // Campo requerido
-    timestamp: string;          // Campo requerido
-    nonce: string;              // Campo requerido
-    coinbase: string;           // Campo requerido
-    extraData: string;          // Contiene signers para clique
+    difficulty: string;
+    mixHash: string;
+    gasLimit: string;
+    timestamp: string;
+    nonce: string;
+    coinbase: string;
+    extraData: string;
     alloc: {
       [address: string]: {
         balance: string;
@@ -310,19 +324,20 @@ generateGenesisConfig(options: GenesisOptions = {}): any {
     };
   } = {
     config: {
-      chainId: options.chainId || 888999,
+      chainId: 13371337,  // ¡Cambiar el chainId a 13371337!
+      londonBlock: 0,     // Agregar soporte para London desde el bloque 0
       constantinopleForkBlock: options.constantinopleForkBlock || 0,
       clique: {
         blockPeriodSeconds: defaultOptions.blockperiodseconds || 5,
         epochLength: defaultOptions.epochlength || 30000
       }
     },
-    difficulty: "0x1",              // Valor constante para Clique
+    difficulty: "0x1",
     mixHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-    gasLimit: "0x1000000",          // Límite de gas inicial
-    timestamp: "0x00",              // Timestamp inicial
-    nonce: "0x0000000000000000",    // Nonce inicial
-    coinbase: "0x0000000000000000000000000000000000000000", // Coinbase inicial (no importa para Clique)
+    gasLimit: "0x1fffffffffffff",  // Usar el mismo gasLimit que en tu script
+    timestamp: "0x00",
+    nonce: "0x0000000000000000",
+    coinbase: "0x0000000000000000000000000000000000000000",
     extraData: extraData,
     alloc: {}
   };
@@ -343,6 +358,7 @@ generateGenesisConfig(options: GenesisOptions = {}): any {
   
   return genesisConfig;
 }
+
   /**
    * Genera los archivos de configuración de Besu para cada nodo
    * @param outputDir Directorio de salida
@@ -439,7 +455,10 @@ generateGenesisConfig(options: GenesisOptions = {}): any {
         `--p2p-port=${node.port}`,
         `--miner-enabled=${node.isSigner}`,
         `--miner-coinbase=${node.address}`,
-        "--node-private-key-file=/opt/besu/data/key"
+        "--node-private-key-file=/opt/besu/data/key",
+        "--rpc-http-api=ETH,NET,CLIQUE,ADMIN,TRACE,DEBUG,TXPOOL,PERM,WEB3",
+        "--p2p-enabled=true",
+        "--discovery-enabled=true"
       ];
       
       // Para los nodos que no sean el primero, agregaremos un placeholder para el bootnode
@@ -934,13 +953,32 @@ async getNetworkStatus(dataDir: string = this.dockerConfig.dataDir): Promise<Net
     return network;
   }
 
- /**
- * Envía una transacción a la red Besu
+/**
+ * Envía una transacción firmada a la red Besu
  * @param nodeName Nombre del nodo desde el que se envía la transacción
  * @param transaction Datos de la transacción
+ * @param waitForConfirmation Si es true, espera a que la transacción sea minada
  * @returns Promesa que se resuelve con la respuesta de la transacción
  */
-async sendTransaction(nodeName: string, transaction: Transaction): Promise<TransactionResponse> {
+/**
+ * Envía una transacción firmada a la red Besu
+ * @param nodeName Nombre del nodo desde el que se envía la transacción
+ * @param transaction Datos de la transacción
+ * @param waitForConfirmation Si es true, espera a que la transacción sea minada
+ * @returns Promesa que se resuelve con la respuesta de la transacción
+ */
+/**
+ * Envía una transacción firmada a la red Besu
+ * @param nodeName Nombre del nodo desde el que se envía la transacción
+ * @param transaction Datos de la transacción
+ * @param waitForConfirmation Si es true, espera a que la transacción sea minada
+ * @returns Promesa que se resuelve con la respuesta de la transacción
+ */
+async sendTransaction(
+  nodeName: string, 
+  transaction: Transaction, 
+  waitForConfirmation: boolean = true
+): Promise<TransactionResponse> {
   try {
     // Buscar el nodo por nombre
     const node = this.nodes.find(n => n.name === nodeName);
@@ -952,61 +990,69 @@ async sendTransaction(nodeName: string, transaction: Transaction): Promise<Trans
       throw new Error(`El nodo ${nodeName} no está en ejecución`);
     }
     
-    // Si no se especifica nonce, obtenerlo automáticamente
-    if (!transaction.nonce) {
-      const nonce = await this.jsonRpcRequest(
-        nodeName, 
-        'eth_getTransactionCount', 
-        [transaction.from, 'latest']
-      );
-      transaction.nonce = nonce;
+    console.log(`\n📤 Preparando transacción desde ${transaction.from} a ${transaction.to}`);
+    
+    // Asegurarse de que from sea la dirección del nodo
+    if (transaction.from.toLowerCase() !== node.address.toLowerCase()) {
+      throw new Error(`La dirección 'from' debe coincidir con la dirección del nodo ${nodeName}`);
     }
     
-    // Si no se especifica gasPrice, usar el gasPrice por defecto
-    if (!transaction.gasPrice) {
-      try {
-        const gasPrice = await this.jsonRpcRequest(nodeName, 'eth_gasPrice', []);
-        transaction.gasPrice = gasPrice;
-      } catch (error) {
-        transaction.gasPrice = "0x0"; // Gas gratuito en redes privadas
-      }
-    }
+    // Usar el mismo enfoque que en index.mjs
+    const privateKey = node.privateKey.startsWith('0x') 
+      ? node.privateKey 
+      : `0x${node.privateKey}`;
     
-    // Si no se especifica gas, usar un valor por defecto
-    if (!transaction.gas) {
-      transaction.gas = "0x100000"; // Valor alto para redes privadas
-    }
+    const wallet = new ethers.Wallet(privateKey);
+    const provider = new ethers.JsonRpcProvider(`http://localhost:${node.rpcPort}`, {
+      chainId: 13371337,  // Usar exactamente el mismo chainId que en index.mjs
+      name: "private"
+    });
     
-    // Enviar la transacción
-    try {
-      const txHash = await this.jsonRpcRequest(
-        nodeName, 
-        'eth_sendTransaction', 
-        [transaction]
-      );
+    const connectedWallet = wallet.connect(provider);
+    
+    console.log(`🔐 Usando wallet ${connectedWallet.address}...`);
+    
+    // Preparar una transacción simple como en index.mjs
+    const txRequest = {
+      to: transaction.to,
+      value: transaction.value ? BigInt(transaction.value) : BigInt(0)
+      // No especificar gas, gasPrice, nonce o chainId - dejar que ethers lo maneje
+    };
+    
+    console.log(`📡 Enviando transacción a la red...`);
+    const tx = await connectedWallet.sendTransaction(txRequest);
+    
+    console.log(`📝 Transacción enviada con hash: ${tx.hash}`);
+    
+    // La transacción fue enviada correctamente
+    if (waitForConfirmation) {
+      console.log(`⏱️ Esperando a que la transacción sea confirmada...`);
+      const receipt = await tx.wait();
       
-      // La transacción fue enviada correctamente
+      console.log(`✅ Transacción confirmada en el bloque ${receipt?.blockNumber}`);
+      
       return {
-        transactionHash: txHash,
+        transactionHash: tx.hash,
+        status: "confirmed",
+        blockNumber: receipt?.blockNumber
+      };
+    } else {
+      return {
+        transactionHash: tx.hash,
         status: "pending"
       };
-    } catch (error) {
-      return {
-        transactionHash: "",
-        status: "failed",
-        error: error instanceof Error ? error.message : "Error desconocido"
-      };
     }
     
-  } catch (error) {
-    console.error('Error al enviar transacción:', error);
+  } catch (error: any) {
+    console.error(`❌ Error al enviar la transacción: ${error?.message || 'Error desconocido'}`);
     return {
       transactionHash: "",
       status: "failed",
-      error: error instanceof Error ? error.message : "Error desconocido"
+      error: error?.message || "Error desconocido"
     };
   }
 }
+
 /**
  * Consulta el saldo de una dirección en la red Besu
  * @param nodeName Nombre del nodo desde el que se consulta
@@ -1133,6 +1179,8 @@ async waitForTransaction(
   maxAttempts: number = 20,
   interval: number = 1000
 ): Promise<TransactionResponse> {
+  console.log(`\n⏱️ Esperando a que la transacción ${txHash} sea minada...`);
+  
   // Buscar el nodo por nombre
   const node = this.nodes.find(n => n.name === nodeName);
   if (!node) {
@@ -1144,9 +1192,21 @@ async waitForTransaction(
   }
   
   let attempts = 0;
+  let lastBlockNumber = await this.jsonRpcRequest(nodeName, 'eth_blockNumber', []);
+  lastBlockNumber = parseInt(lastBlockNumber, 16);
+  console.log(`🔍 Bloque actual: ${lastBlockNumber}`);
   
   while (attempts < maxAttempts) {
     try {
+      // Comprobar si ha habido nuevos bloques
+      const currentBlock = await this.jsonRpcRequest(nodeName, 'eth_blockNumber', []);
+      const currentBlockNumber = parseInt(currentBlock, 16);
+      
+      if (currentBlockNumber > lastBlockNumber) {
+        console.log(`🆕 Nuevo bloque minado: ${currentBlockNumber}`);
+        lastBlockNumber = currentBlockNumber;
+      }
+      
       const receipt = await this.jsonRpcRequest(
         nodeName,
         'eth_getTransactionReceipt',
@@ -1155,14 +1215,47 @@ async waitForTransaction(
       
       // Si la transacción ha sido procesada
       if (receipt) {
+        const blockNumber = parseInt(receipt.blockNumber, 16);
+        const success = receipt.status === "0x1";
+        
+        console.log(`\n✅ Transacción confirmada en el bloque ${blockNumber}`);
+        console.log(`Estado: ${success ? 'Exitosa ✅' : 'Fallida ❌'}`);
+        console.log(`Gas usado: ${parseInt(receipt.gasUsed, 16)}`);
+        
         return {
           transactionHash: txHash,
-          status: receipt.status === "0x1" ? "confirmed" : "failed",
-          blockNumber: parseInt(receipt.blockNumber, 16)
+          status: success ? "confirmed" : "failed",
+          blockNumber: blockNumber
         };
       }
+      
+      if (attempts % 5 === 0) {
+        // Cada 5 intentos, mostrar información de la mempool
+        try {
+          const pendingTxs = await this.jsonRpcRequest(nodeName, 'txpool_content', []);
+          if (pendingTxs && (
+              (pendingTxs.pending && Object.keys(pendingTxs.pending).length > 0) || 
+              (pendingTxs.queued && Object.keys(pendingTxs.queued).length > 0)
+            )) {
+            const pendingCount = Object.values(pendingTxs.pending || {}).reduce((acc: number, addr: any) => 
+              acc + Object.keys(addr).length, 0);
+            const queuedCount = Object.values(pendingTxs.queued || {}).reduce((acc: number, addr: any) => 
+              acc + Object.keys(addr).length, 0);
+            
+            console.log(`ℹ️ Transacciones pendientes: ${pendingCount}, En cola: ${queuedCount}`);
+          }
+        } catch (error) {
+          // Es posible que txpool_content no esté disponible, no mostramos error
+        }
+      }
     } catch (error) {
-      console.warn(`Error al consultar transacción (intento ${attempts + 1}):`, error);
+      console.warn(`⚠️ Error al consultar transacción (intento ${attempts + 1}):`, error);
+    }
+    
+    // Mostrar progreso
+    process.stdout.write('.');
+    if (attempts % 10 === 9) {
+      process.stdout.write('\n');
     }
     
     // Esperar antes del siguiente intento
@@ -1170,12 +1263,69 @@ async waitForTransaction(
     attempts++;
   }
   
+  console.log(`\n⚠️ Tiempo de espera agotado después de ${maxAttempts} intentos`);
+  
   // Si llegamos aquí, la transacción no fue confirmada dentro del plazo
   return {
     transactionHash: txHash,
     status: "pending",
     error: "Transacción pendiente después del tiempo de espera"
   };
+}
+
+/**
+ * Muestra información detallada sobre una transacción
+ * @param nodeName Nombre del nodo
+ * @param txHash Hash de la transacción
+ */
+async logTransactionDetails(nodeName: string, txHash: string): Promise<void> {
+  try {
+    console.log(`\n----- Detalles de la transacción ${txHash} -----`);
+    
+    // Obtener la transacción
+    const tx = await this.jsonRpcRequest(nodeName, 'eth_getTransactionByHash', [txHash]);
+    if (!tx) {
+      console.log(`Transacción ${txHash} no encontrada en la mempool.`);
+      return;
+    }
+    
+    console.log(`De: ${tx.from}`);
+    console.log(`A: ${tx.to}`);
+    console.log(`Valor: ${BesuNetwork.weiToEther('0x' + BigInt(tx.value).toString(16))} ETH`);
+    console.log(`Gas Price: ${parseInt(tx.gasPrice, 16)} wei`);
+    console.log(`Gas: ${parseInt(tx.gas, 16)}`);
+    console.log(`Nonce: ${parseInt(tx.nonce, 16)}`);
+    
+    // Obtener el recibo para ver si ya está minada
+    const receipt = await this.jsonRpcRequest(nodeName, 'eth_getTransactionReceipt', [txHash]);
+    if (receipt) {
+      console.log(`\nEstado: ${receipt.status === '0x1' ? 'Éxito ✅' : 'Fallida ❌'}`);
+      console.log(`Bloque: ${parseInt(receipt.blockNumber, 16)}`);
+      console.log(`Gas usado: ${parseInt(receipt.gasUsed, 16)}`);
+      
+      // Calcular tiempo de confirmación si es posible
+      const block = await this.jsonRpcRequest(nodeName, 'eth_getBlockByNumber', [receipt.blockNumber, false]);
+      if (block) {
+        const timestamp = parseInt(block.timestamp, 16);
+        const now = Math.floor(Date.now() / 1000);
+        console.log(`Confirmado hace: ${now - timestamp} segundos`);
+      }
+    } else {
+      console.log('\nEstado: Pendiente ⏱️');
+      
+      // Verificar si está en la mempool
+      const pendingTxs = await this.jsonRpcRequest(nodeName, 'txpool_content', []);
+      if (pendingTxs && (pendingTxs.pending || pendingTxs.queued)) {
+        console.log('La transacción está en la mempool');
+      } else {
+        console.log('La transacción no parece estar en la mempool');
+      }
+    }
+    
+    console.log('-----------------------------------------\n');
+  } catch (error) {
+    console.error(`Error al obtener detalles de la transacción ${txHash}:`, error);
+  }
 }
 }
 

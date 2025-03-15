@@ -1,15 +1,24 @@
 {
+  "publishConfig": {
+    "access": "public"
+  },
   "name": "@cjmontca/libcrypto-ts",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "librería para gestionar redes y nodos de hyperledger besu",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts"
+  ],
   "scripts": {
-    "test": "jest"
+    "prebuild": "rimraf /dist",
+    "test": "jest ./src/__tests__",
+    "build": "tsc"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",  
+  "author": "cjmontca <jcarlosmc2008@gmail.com>",
+  "license": "MIT",
   "devDependencies": {
     "@types/inquirer": "^9.0.7",
     "@types/jest": "^29.5.14",
@@ -21,6 +30,9 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
+    "@ethereumjs/common": "^4.4.0",
+    "@ethereumjs/tx": "^5.4.0",
+    "@ethereumjs/util": "^9.1.0",
     "buffer": "^6.0.3",
     "commander": "^13.1.0",
     "crypto": "^1.0.1",

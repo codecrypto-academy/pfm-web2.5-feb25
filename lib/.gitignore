@@ -1,0 +1,8 @@
+node_modules
+dist
+src/besu-network-simple-test.ts
+src/besu-network-test.ts
+src/deploy-besu-network.ts
+src/stop-delete.ts
+src/test-besu-bootnode.ts
+.npmignore
