@@ -331,7 +331,7 @@ describe('BesuNetwork', () => {
         const content = JSON.parse(writeCall[1]);
         
         // Verificar estructura
-        expect(content.config.chainId).toBe(888999);
+        expect(content.config.chainId).toBe(13371337);
         expect(content.config.clique).toBeDefined();
         expect(content.alloc).toBeDefined();
         expect(content.extraData).toBeDefined();
