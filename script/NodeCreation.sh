@@ -288,3 +288,17 @@ echo "Node1 balance after: $node1BalanceAfter Wei"
 echo "Diferencia en balances:"
 echo "Node2: $((16#${node2BalanceAfter#0x} - 16#${node2BalanceBefore#0x})) Wei"
 echo "Node1: $((16#${node1BalanceAfter#0x} - 16#${node1BalanceBefore#0x})) Wei"
+
+######################################################
+# Crear el archivo .env en la ruta ../frontback
+frontbackDir="$baseDir/frontback"
+envFile="$frontbackDir/.env"
+
+# Crear el archivo .env con la clave privada y la URL de BESU
+echo "Creando archivo .env en $envFile..."
+cat > "$envFile" <<EOL
+PRIVATE_KEY=$node1PrivKey
+BESU_URL=http://localhost:9999
+EOL
+
+echo "Archivo .env creado exitosamente en $envFile."
