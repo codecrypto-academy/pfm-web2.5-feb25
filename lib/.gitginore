@@ -1,0 +1,7 @@
+lib/src/node_modules
+lib/dist
+lib/src/besu-network-simple-test.ts
+lib/src/besu-network-test.ts
+lib/src/deploy-besu-network.ts
+lib/src/stop-delete.ts
+lib/src/test-besu-bootnode.ts
