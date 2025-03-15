@@ -1,4 +1,4 @@
-import { getBalance, getBlockNumber, transferFrom, getNetworkInfo, launchNewNode, deleteNode } from '../../lib/index';
+import { getBalance, getBlockNumber, transferFrom, getNetworkInfo, launchNewNode, deleteNode } from '../index';
 import fetchMock from 'jest-fetch-mock';
 import * as child_process from 'child_process';
 import { ChildProcess, ExecException } from 'child_process';

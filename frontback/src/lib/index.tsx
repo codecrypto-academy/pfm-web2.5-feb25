@@ -1,9 +1,13 @@
-import * as child_process from 'child_process';
+"use server";
+import * as child_process from 'node:child_process';
 const { exec } = child_process;
 import { ethers } from 'ethers';
 import * as path from 'path';
 const scriptPath = path.resolve(__dirname, '../script/');
-export { getBalance, getBlockNumber, transferFrom, getNetworkInfo, launchNewNode, deleteNode };
+export { getBalance, getBlockNumber, transferFrom, getNetworkInfo, launchNewNode, deleteNode, faucetSubmit };
+import fs from 'node:fs';
+const url = process.env.BESU_URL
+const provider = new ethers.JsonRpcProvider(url);
 
 
 
@@ -48,15 +52,11 @@ async function getBlockNumber(url: string): Promise<number> {
     return parseInt(data.result, 16);
 }
 
-async function transferFrom(url: string, fromPrivate: string, to: string, amount: number): Promise<ethers.TransactionReceipt | null> {
+async function transferFrom(fromPrivate: string, to: string, amount: number): Promise<ethers.TransactionReceipt | null> {
     try {
         const wallet = new ethers.Wallet(fromPrivate);
-        /**const provider = new ethers.JsonRpcProvider(url, {
-        *    chainId: 123999,
-        *   name: "private",
-        *});
-        */
-        const provider = new ethers.JsonRpcProvider(url);
+
+
         const connectedWallet = wallet.connect(provider);
         const tx = await connectedWallet.sendTransaction({
             to: to,
@@ -112,4 +112,20 @@ function deleteNode(nodeId: string): Promise<string> {
             resolve(stdout);
         });
     });
+}
+
+async function faucetSubmit(formData: FormData) {
+
+    const account = formData.get('account') as string;
+    if (!account) throw new Error('Account is required');
+    const privateKey = process.env.PRIVATE_KEY as string;
+    const wallet = new ethers.Wallet(privateKey, provider);
+
+    const tx = await wallet.sendTransaction({
+        to: account,
+        value: ethers.parseEther('1.0')
+    });
+
+    await tx.wait();
+    return { success: true };
 }
