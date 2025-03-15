@@ -2,7 +2,7 @@ import * as child_process from 'child_process';
 const { exec } = child_process;
 import { ethers } from 'ethers';
 import * as path from 'path';
-const scriptPath = path.resolve(__dirname, '../../scripts/');
+const scriptPath = path.resolve(__dirname, '../script/');
 export { getBalance, getBlockNumber, transferFrom, getNetworkInfo, launchNewNode, deleteNode };
 
 
@@ -82,30 +82,34 @@ async function getNetworkInfo(url: string): Promise<NetworkInfo> {
 }
 
 
-function launchNewNode(): void {
-    exec(`${scriptPath}/newNode.sh`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing newNode.sh: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.error(`stderr: ${stderr}`);
-            return;
-        }
-        console.log(`stdout: ${stdout}`);
+function launchNewNode(): Promise<string> {
+    return new Promise((resolve, reject) => {
+        exec(`${scriptPath}/newNode.sh`, (error, stdout, stderr) => {
+            if (error) {
+                reject(error.message);
+                return;
+            }
+            if (stderr) {
+                reject(stderr);
+                return;
+            }
+            resolve(stdout);
+        });
     });
 }
 
-function deleteNode(nodeId: string): void {
-    exec(`${scriptPath}/deleteNode.sh ${nodeId}`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing deleteNode.sh: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.error(`stderr: ${stderr}`);
-            return;
-        }
-        console.log(`stdout: ${stdout}`);
+function deleteNode(nodeId: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        exec(`${scriptPath}/deleteNode.sh ${nodeId}`, (error, stdout, stderr) => {
+            if (error) {
+                reject(error.message);
+                return;
+            }
+            if (stderr) {
+                reject(stderr);
+                return;
+            }
+            resolve(stdout);
+        });
     });
 }
