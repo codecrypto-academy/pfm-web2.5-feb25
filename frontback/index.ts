@@ -14,9 +14,10 @@ export class BesuNetwork {
 
     constructor() {
         // Initialize networks from a persistent storage if needed
-        if (typeof window !== 'undefined') {
+        
+        /*if (typeof window !== 'undefined') {
             this.listenForMetaMaskNetworkChange();
-        }
+        }*/
     }
     
 
@@ -42,8 +43,8 @@ export class BesuNetwork {
         console.log(`Active node for ${networkName} set to ${activeNodeUrl}`);
     }
 
-     // Listen for network changes in MetaMask
-     private listenForMetaMaskNetworkChange(): void {
+     // Listen for network/RPC changes in MetaMask (Not working) 
+     /*private listenForMetaMaskNetworkChange(): void {
         if (typeof window.ethereum !== 'undefined') {
             window.ethereum.on('chainChanged', (chainId: string) => {
                 console.log(`MetaMask network changed to chainId: ${chainId}`);
@@ -92,7 +93,7 @@ export class BesuNetwork {
                 console.log(error);
             }     
         }
-    }
+    }*/
 
     async reset(networkName: string): Promise<void> {
         try {
