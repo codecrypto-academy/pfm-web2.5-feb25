@@ -133,15 +133,17 @@ The application allows to launch a private network based on Hyperledger Besu wit
 - Go to the "Interactions" section.
 - Select the network you want to interact with.
 - You can perform the following actions:
--- Request Tokens: Request tokens from the provider.
 
--- Transfer Tokens: Send tokens from one address to another. (You need to config at Metamask the netWork created (details on "Networks Dashboard") in which you want to interact and import the addresses using the privateKey -> networks/$networkName/$nodeName/key)
+    -- Request Tokens: Request tokens from the provider.
+
+    -- Transfer Tokens: Send tokens from one address to another. (You need to config at Metamask the netWork created (details on "Networks Dashboard") in which you want to interact and import the addresses using the privateKey -> networks/$networkName/$nodeName/key)
     It has been included a page_noMetamask.tsx which allows making transferences without using Metamask as if you were an Admin to manage the accounts and getting access to each privateKey to sign the transferences.
 
--- Check Balances: Check the balance of a specific address.
+    -- Check Balances: Check the balance of a specific address.
 
-You should start Requesting Tokens before doing anything else because you will start with no funds.
+  You should start Requesting Tokens before doing anything else because you will start with no funds.
 
-For this interactions you must get the addresses from de proyect files: networks/$networkName/$nodeName/address. If you prefer, you can use the private key (networks/$networkName/$nodeName/key) of each to import accounts on Metamask(need to config the network you are going to use).
+  For this interactions you must get the addresses from de proyect files: networks/$networkName/$nodeName/address. If you prefer, you can use the private key (networks/$networkName/$nodeName/key) of each to import accounts on Metamask(need to config the network you are going to use).
+  
 
 For any further assistance, refer to the [Next.js Documentation](https://nextjs.org/docs) and [Hyperledger Besu Documentation](https://besu.hyperledger.org).
