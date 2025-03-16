@@ -65,7 +65,7 @@ You can run the following commands in the `frontback` directory:
 ## 📌Videos by sections on how to use it
 ### 1️⃣ Manager
 From the Manager view, we can use Create New Network to automatically create a network with 4 nodes. This will also generate a transfer between nodes 1 and 2 to test it and set the necessary environment variables for operation.
-* 🎥[Manager](https://www.loom.com/share/7b0b4185c9764443b42ae36efe25f7be?sid=0b8e88fc-b1ac-4e9b-995c-6b1c4eb69690)
+* 🎥[![Manager]](https://www.loom.com/share/7b0b4185c9764443b42ae36efe25f7be?sid=0b8e88fc-b1ac-4e9b-995c-6b1c4eb69690)
 
 
 
