@@ -5,9 +5,9 @@ import { ethers } from 'ethers';
 import * as path from 'path';
 const scriptPath = path.resolve(__dirname, '../script/');
 export { getBalance, getBlockNumber, transferFrom, getNetworkInfo, launchNewNode, deleteNode, faucetSubmit };
-import fs from 'node:fs';
-const url = process.env.BESU_URL
+const url = process.env.BESU_URL as string
 const provider = new ethers.JsonRpcProvider(url);
+const privateKey = process.env.PRIVATE_KEY as string
 
 
 
@@ -32,16 +32,25 @@ async function callApi(url: string, method: string, params: any[]): Promise<Json
             id: 1,
         }),
     });
+
     const json: JsonRpcResponse = await response.json();
+    //console.log("API Response:", json);
+
     return json;
 }
 
-async function getBalance(url: string, address: string): Promise<bigint> {
-    const data = await callApi(url, "eth_getBalance", [address, "latest"]);
+
+async function getBalance(formData: FormData) {
+    const account = formData.get('account') as string;
+    if (!account) throw new Error('Account is required')
+    const data = await callApi(url, "eth_getBalance", [account, "latest"]);
     if (!data.result) {
         throw new Error("Invalid response: Missing result field");
     }
-    return BigInt(data.result);
+    const balanceInWei = data.result;
+    const balanceInEther = ethers.formatEther(balanceInWei);
+
+    return { balance: balanceInEther };
 }
 
 async function getBlockNumber(url: string): Promise<number> {
@@ -52,13 +61,10 @@ async function getBlockNumber(url: string): Promise<number> {
     return parseInt(data.result, 16);
 }
 
-async function transferFrom(fromPrivate: string, to: string, amount: number): Promise<ethers.TransactionReceipt | null> {
+async function transferFrom(from: string, to: string, amount: number): Promise<ethers.TransactionReceipt | null> {
     try {
-        const wallet = new ethers.Wallet(fromPrivate);
-
-
-        const connectedWallet = wallet.connect(provider);
-        const tx = await connectedWallet.sendTransaction({
+        const wallet = new ethers.Wallet(privateKey, provider);
+        const tx = await wallet.sendTransaction({
             to: to,
             value: ethers.parseEther(amount.toString()),
         });
@@ -118,7 +124,6 @@ async function faucetSubmit(formData: FormData) {
 
     const account = formData.get('account') as string;
     if (!account) throw new Error('Account is required');
-    const privateKey = process.env.PRIVATE_KEY as string;
     const wallet = new ethers.Wallet(privateKey, provider);
 
     const tx = await wallet.sendTransaction({
