@@ -1,9 +1,10 @@
 {
-  "name": "lib",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "@dalzemag/besu-clique",
+  "version": "0.0.8",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "start": "npx tsc && node --inspect dist/index.js",
+    "start": "npx tsc -w && node --inspect dist/index.js",
     "test": "npx tsc && jest"
   },
   "jest": {

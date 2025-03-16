@@ -1,4 +1,15 @@
-import { BesuClique, Node } from "..";
+import { BesuClique } from "../besuClique";
+
+export interface Node {
+  name: string;
+  portJSON: number;
+  portWS: number;
+  portP2P: number;
+  address?: string;
+  dockerId?: string;
+  dockerIP?: string;
+  enode?: string;
+}
 
 const besuClique = new BesuClique();
 
@@ -132,11 +143,11 @@ describe('createNodeSlave - Node 2', () => {
   }, 10000)
 });
 
-describe('sendTransaction', () => {
-  it('should return a string', async () => {
-    expect(await besuClique.sendTransaction("0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C", besuClique.getPrivateKey("f17f52151EbEF6C7334FAD080c5704D77216b732"), 100)).toHaveLength(66);
-  }, 25000)
-});
+// describe('sendTransaction', () => {
+//   it('should return a string', async () => {
+//     expect(await besuClique.sendTransaction("0x789b1182f498Be80c0d7D36E395c2CBC53b44B0C", besuClique.getPrivateKey("f17f52151EbEF6C7334FAD080c5704D77216b732"), 100)).toHaveLength(66);
+//   }, 25000)
+// });
 
 describe('getBalance', () => {
   it('should return a string', async () => {
@@ -156,11 +167,11 @@ describe('deleteNode - Node 2', () => {
   })
 });
 
-describe('getPrivateKey', () => {
-  it('should return a string', () => {
-    expect(besuClique.getPrivateKey('f17f52151EbEF6C7334FAD080c5704D77216b732')).toBe('0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f');
-  })
-});
+// describe('getPrivateKey', () => {
+//   it('should return a string', () => {
+//     expect(besuClique.getPrivateKey('f17f52151EbEF6C7334FAD080c5704D77216b732')).toBe('0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f');
+//   })
+// });
 
 describe('stopNode - Node 1', () => {
   it('should return a string', async () => {

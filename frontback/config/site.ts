@@ -13,8 +13,8 @@ export const siteConfig = {
       href: "/dashboard",
     },
     {
-      label: "Pricing",
-      href: "/pricing",
+      label: "Testing",
+      href: "/testing",
     },
     {
       label: "Blog",
@@ -60,7 +60,7 @@ export const siteConfig = {
     },
   ],
   links: {
-    github: "https://github.com/dalzemag",
+    github: "https://github.com/DaLZmG",
     twitter: "https://twitter.com/dalzemag",
     docs: "https://heroui.com",
     discord: "https://discord.gg/9b6yyZKmH4",
