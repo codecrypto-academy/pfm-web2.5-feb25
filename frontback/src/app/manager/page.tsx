@@ -31,8 +31,8 @@ export default function NetworkManager() {
           <div className="bg-white p-6 shadow-lg rounded-lg">
             <h3 className="text-xl font-semibold mb-4">Networks Dashboard</h3>
             <p className="text-gray-600 mb-4">View the status of your networks and nodes with live updates.</p>
-            <Link href="/manager/query" className="inline-block px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-700">
-              Query Networks
+            <Link href="/manager/dashboard" className="inline-block px-6 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-700">
+              Networks Dashboard
             </Link>
           </div>
         </div>

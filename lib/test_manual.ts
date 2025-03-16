@@ -1,4 +1,4 @@
-import { BesuNetwork } from './index';
+import { BesuNetwork } from '../frontback/index';
 
 const besu = new BesuNetwork();
 

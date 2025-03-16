@@ -6,6 +6,7 @@ import * as fs from 'fs';
 export class BesuNetwork {
     private networks: {
         [networkName: string]: {
+            chainId: any;
             subnet: any; nodes: { name: string, port: string }[], activeNode: string | null
         }
     } = {};
@@ -13,21 +14,84 @@ export class BesuNetwork {
 
     constructor() {
         // Initialize networks from a persistent storage if needed
+        if (typeof window !== 'undefined') {
+            this.listenForMetaMaskNetworkChange();
+        }
     }
+    
 
     // Set active node for interactions (RPC calls)
-    setActiveNode(networkName: string): void {
+    setActiveNode(networkName: string, rpcUrl?: string): void {
         if (!this.networks[networkName]) {
             throw new Error(`Network ${networkName} does not exist.`);
         }
-        const activeNode = this.networks[networkName].nodes[0]; // Assuming the first node is the bootnode
+
+        let activeNodeUrl: string;
+        if (rpcUrl) {
+            activeNodeUrl = rpcUrl;
+        } else {
+            const activeNode = this.networks[networkName].nodes[0]; // Assuming the first node is the bootnode
             if (!activeNode) {
-                throw new Error(`Activenode not found in network ${networkName}.`);
+                throw new Error(`Active node not found in network ${networkName}.`);
             }
-        const activeNodeUrl = `http://localhost:${activeNode.port}`;
+            activeNodeUrl = `http://localhost:${activeNode.port}`;
+        }
+
         this.networks[networkName].activeNode = activeNodeUrl;
         this.provider = new JsonRpcProvider(activeNodeUrl);
         console.log(`Active node for ${networkName} set to ${activeNodeUrl}`);
+    }
+
+     // Listen for network changes in MetaMask
+     private listenForMetaMaskNetworkChange(): void {
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('chainChanged', (chainId: string) => {
+                console.log(`MetaMask network changed to chainId: ${chainId}`);
+                const networkName = Object.keys(this.networks).find(network => 
+                    this.networks[network].chainId === chainId);
+                
+                if (networkName) {
+                    
+                    const currentRpcUrl = window.ethereum.rpcUrls?.[0] || window.ethereum.providerConfig?.rpcUrl;
+                    this.setActiveNode(networkName, currentRpcUrl);
+                    console.log(`Updated RPC URL to MetaMask's current RPC: ${currentRpcUrl}`);
+                }
+            });
+        }
+    }
+
+    private updateProviderFromMetaMask(chainId: string): void {
+        console.log(`Updating provider for chainId: ${chainId}`);
+        const networkName = Object.keys(this.networks).find(network => 
+            this.networks[network].chainId === chainId);
+        
+        if (networkName) {
+            try {
+                 // Intentar obtener la URL RPC directamente desde el proveedor
+                 let rpcUrl;
+                
+                 // Método 1: intentar obtener mediante solicitud al proveedor
+                 if (window.ethereum.request) {
+                     try {
+                         // Esta es una operación asíncrona, pero la ejecutamos inmediatamente
+                         window.ethereum.request({ method: 'eth_getProviderConfig' })
+                             .then((config: any) => {
+                                 if (config && config.rpcUrl) {
+                                     console.log(`Got RPC URL from provider: ${config.rpcUrl}`);
+                                     this.setActiveNode(networkName, config.rpcUrl);
+                                 }
+                             })
+                             .catch((err: any) => {
+                                 console.error("Failed to get provider config:", err);
+                             });
+                     } catch (e) {
+                         console.log("eth_getProviderConfig not supported, trying alternative methods");
+                     }
+                 }               
+            } catch (error) {
+                console.log(error);
+            }     
+        }
     }
 
     async reset(networkName: string): Promise<void> {
@@ -42,7 +106,7 @@ export class BesuNetwork {
             console.error("Error resetting network:", error)
         }
     }
-    async createNetwork(networkName: string, subnet: string) {
+    async createNetwork(networkName: string, chainId:string, subnet: string) {
         try {
             await this.reset(networkName);
             execSync(`mkdir -p networks/${networkName}`);
@@ -52,7 +116,7 @@ export class BesuNetwork {
                 this.networks = {};
             }
 
-            this.networks[networkName] = { subnet, nodes: [], activeNode: null }
+            this.networks[networkName] = { chainId, subnet, nodes: [], activeNode: null }
 
             console.log(`Net ${networkName} created successfully`);
             console.log("Current networks:", this.networks);
@@ -143,7 +207,7 @@ export class BesuNetwork {
     }
 
     // Add bootnode to the network
-    async addBootnode(containerName: string, networkName: string, nodeport: string, networkPath: string): Promise<void> {
+    async addBootnode(containerName: string, networkName: string, subnet:string, nodeport: string, networkPath: string): Promise<void> {
         try {
             if (!this.networks[networkName]) {
                 throw new Error(`Network ${networkName} does not exist. Create it first.`);
@@ -152,8 +216,9 @@ export class BesuNetwork {
             const bootnodeNodePath = `${networkPath}/${containerName}`;
             const { address: bootnodeAddress, publicKey: bootnodePublicKey } = this.generateNodeKeys(bootnodeNodePath);
 
-            this.createGenesisFile(networkPath, 180395, bootnodeAddress);
-            this.createConfigFile(networkPath, "172.20.0.2", bootnodePublicKey.slice(2));
+            this.createGenesisFile(networkPath, this.networks[networkName].chainId, bootnodeAddress);
+            const subnetIp = subnet.split('/')[0];//Extract IP from subnet
+            this.createConfigFile(networkPath, subnetIp, bootnodePublicKey.slice(2));
 
             execSync(`
                 docker run -d --name ${containerName} \
@@ -249,7 +314,7 @@ export class BesuNetwork {
             // Find the node directory that contains the private key for the given address
             const networkName = Object.keys(this.networks).find(network => 
                 this.networks[network].nodes.some(node => {
-                    const addressPath = `networks/${network}/${node.name}/address.txt`;
+                    const addressPath = `networks/${network}/${node.name}/address`;
                     return fs.existsSync(addressPath) && fs.readFileSync(addressPath, "utf8").trim() === from;
                 })
             );
@@ -259,7 +324,7 @@ export class BesuNetwork {
             }
 
             const node = this.networks[networkName].nodes.find(node => {
-                const addressPath = `networks/${networkName}/${node.name}/address.txt`;
+                const addressPath = `networks/${networkName}/${node.name}/address`;
                 return fs.existsSync(addressPath) && fs.readFileSync(addressPath, "utf8").trim() === from;
             });
 
@@ -267,7 +332,7 @@ export class BesuNetwork {
                 throw new Error(`Node with address ${from} not found in network ${networkName}.`);
             }
 
-            const keyPath = `networks/${networkName}/${node.name}/key.txt`;
+            const keyPath = `networks/${networkName}/${node.name}/key`;
             const fromPrivateKey = fs.readFileSync(keyPath, "utf8").trim();
             const wallet = new ethers.Wallet(fromPrivateKey, this.provider);
             const tx = await wallet.sendTransaction({

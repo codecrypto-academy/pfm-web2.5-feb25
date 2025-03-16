@@ -1,4 +1,4 @@
-import { BesuNetwork } from './index.ts';
+import { BesuNetwork } from '../lib/index';
 import { execSync } from 'child_process';
 import { ethers } from 'ethers';
 import * as fs from 'fs';
@@ -118,7 +118,7 @@ describe('BesuNetwork', () => {
         expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`docker run -d --name bootnodeContainer`));
         expect(mockFs).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/genesis.json'), expect.any(String));
         expect(mockFs).toHaveBeenCalledWith(expect.stringContaining('networks/testNetwork/config.toml'), expect.any(String));
-        expect(besu['networks']['testNetwork'].nodes).toContain('http://localhost:30303');
+        expect(besu['networks']['testNetwork'].nodes).toContainEqual({ name: 'bootnodeContainer', port: '30303' });
     });
 
     //addNode function test
@@ -150,25 +150,16 @@ describe('BesuNetwork', () => {
             hyperledger/besu:latest \
             --config-file=/data/config.toml --data-path=/data/nodeContainer/data
             `));
-        expect(besu['networks']['testNetwork'].nodes).toContain('http://localhost:9999');
-    });
+        expect(besu['networks']['testNetwork'].nodes).toContainEqual({ name: 'nodeContainer', port: '9999' });
+        });
 
     //setActiveNode function test
     test('should set active node', () => {
-        besu['networks']['testNetwork'] = { nodes: ['http://localhost:8545'], activeNode: null };
+        besu['networks']['testNetwork'] = { subnet: "172.20.2.2", nodes: [{name:'testnode',port:'8545'}], activeNode: null };
 
-        besu.setActiveNode('testNetwork', 'http://localhost:8545');
+        besu.setActiveNode('testNetwork');
 
         expect(besu['networks']['testNetwork'].activeNode).toBe('http://localhost:8545');
-    });
-
-    //Error in Set ActiveNode test
-    test('should throw error if node is not part of the network', () => {
-        besu['networks']['testNetwork'] = { nodes: ['http://localhost:8545'], activeNode: null };
-
-        expect(() => besu.setActiveNode('testNetwork', 'http://localhost:9999')).toThrowError(
-            'Node http://localhost:9999 is not part of network testNetwork.'
-        );
     });
 
     //removeNode function test
@@ -185,12 +176,11 @@ describe('BesuNetwork', () => {
         await besu.createNetwork('testNetwork', '192.168.1.0/24');
         await besu.addNode('nodeContainer', 'testNetwork', '30303', 'networks/testNetwork');
 
-        await besu.removeNode('nodeContainer');
+        await besu.removeNode('nodeContainer', 'testNetwork');
 
-        expect(mockExecSync).toHaveBeenCalledWith("docker port nodeContainer", { encoding: "utf-8" });
         expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`docker rm -f nodeContainer `));
-        expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`rm -rf nodeContainer`));
-        expect(besu['networks']['testNetwork'].nodes).not.toContain('http://localhost:30303');
+        expect(mockExecSync).toHaveBeenCalledWith(expect.stringContaining(`rm -rf networks/testNetwork/nodeContainer`));
+        expect(besu['networks']['testNetwork'].nodes).not.toContainEqual({ name: 'nodeContainer', port: '30303' });
     });
 
     //getNetworks function test
@@ -219,8 +209,8 @@ describe('BesuNetwork', () => {
 
         await besu.addNode('nodeContainer', 'testNetwork', '9999', 'networks/testNetwork');
 
-        await besu.getNetworks();
-        expect(besu['networks']['testNetwork'].nodes).toContain("http://localhost:9999");
+        const nodes = await besu.getNodes('testNetwork');
+        expect(nodes).toContainEqual({ name: 'nodeContainer', port: '9999' });
     })
 
     //getBalance function test
@@ -234,7 +224,7 @@ describe('BesuNetwork', () => {
         besu.addNode("testNode", "testNetwork", "8545", "networks/testNetwork");
 
         // ActiveNode established
-        besu.setActiveNode("testNetwork", "http://localhost:8545");
+        besu.setActiveNode("testNetwork");
 
         // Mock of balance answer
         jest.spyOn(ethers.JsonRpcProvider.prototype, "getBalance")
@@ -255,7 +245,7 @@ describe('BesuNetwork', () => {
         besu.addNode("testNode", "testNetwork", "8545", "networks/testNetwork");
 
         // ActiveNode established
-        besu.setActiveNode("testNetwork", "http://localhost:8545");
+        besu.setActiveNode("testNetwork");
 
         // Create mock transaction based in TransactionResponse
         const mockTxResponse = Object.assign(new ethers.TransactionResponse({} as any, {} as any), {
