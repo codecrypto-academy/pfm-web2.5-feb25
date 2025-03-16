@@ -75,6 +75,14 @@ In the faucet section, you can connect a MetaMask account and receive an ETH. Th
 
 * 🎥[Faucet](https://www.loom.com/share/871e7a6bb788438db5bb1a38a255bd1d?sid=62d9479c-22e4-45e0-9dff-da035699dd95)
 
+### 3️⃣ Transfers
+In the transfers section, you can request transfers between two accounts. They will be signed by node 1.
+* 🎥[Transfers](https://www.loom.com/share/3fa5b599ac76404587b907e4e033cfae?sid=e8a817b5-59ce-4307-94b3-dab07ea42e22)
+
+### 4️⃣ Balances
+In the balances section, we can check the funds of a given address.
+* 🎥[Balances](https://www.loom.com/share/b358aec062a842c38aa6084a2a69ef6f?sid=8f82c70d-2308-403c-9dea-a2385f0bb7c3)
+
 ## 🤝 Contribution
 If you want to contribute to the project:
 1. Fork the repository.
