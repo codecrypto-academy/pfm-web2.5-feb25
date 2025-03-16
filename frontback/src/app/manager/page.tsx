@@ -96,7 +96,7 @@ export default function Manager() {
 
             // Convert balance from hexadecimal to decimal
             const balanceInWei = parseInt(balance.balance, 16);
-
+            //console.log(balanceInWei)
             // If the node has funds, ask for confirmation
             if (balanceInWei !== 0) {
                 const confirmDelete = window.confirm(

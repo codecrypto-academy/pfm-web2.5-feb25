@@ -190,7 +190,7 @@ async function getAllBalances(): Promise<NodeBalance[]> {
                     balances.push({
                         nodeName: `node${match[1]}`,
                         address: match[2],
-                        balance: match[3],
+                        balance: ethers.formatEther(BigInt(match[3]).toString()),
                     });
                 }
             }
