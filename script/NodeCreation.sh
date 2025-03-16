@@ -188,7 +188,7 @@ echo "Balances before transaccion:"
 node2BalanceBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode2'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9998/ | jq -r '.result')
 node1BalanceBefore=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["'$addressNode1'","latest"],"id":1}' -H "Content-Type: application/json" http://localhost:9999/ | jq -r '.result')
 echo "Node2 balance before: $node2BalanceBefore Wei"
-echo "Node4 balance before: $node1BalanceBefore Wei"
+echo "Node1 balance before: $node1BalanceBefore Wei"
 ######################################################
 # Function to send a raw signed transaction
 send_raw_transaction() {
@@ -200,12 +200,12 @@ send_raw_transaction() {
         '{jsonrpc: "2.0", method: "eth_sendRawTransaction", params: [$st], id: 1}')
 
 
-    echo "Sending raw transaction to $rpc_url..." >&2
+    #echo "Sending raw transaction to $rpc_url..." >&2
     local response=$(curl -s -X POST --data "$json_rpc_request" -H "Content-Type: application/json" "$rpc_url")
     local tx_hash=$(echo "$response" | jq -r '.result')
 
     if [ "$tx_hash" != "null" ]; then
-        echo "Transaction sent successfully! Transaction hash: $tx_hash" >&2
+        #echo "Transaction sent successfully! Transaction hash: $tx_hash" >&2
         echo "$tx_hash"  
     else
         echo "Failed to send transaction. Error: $(echo "$response" | jq -r '.error.message')" >&2

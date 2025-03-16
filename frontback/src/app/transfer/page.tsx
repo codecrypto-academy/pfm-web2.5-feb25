@@ -22,6 +22,7 @@ export default function Transfer() {
 
         try {
             setIsLoading(true);
+            setStatus(""); // Limpiar el estado anterior
             await transferFrom(from, to, amount);
             setStatus("Transaction successful!");
         } catch (error) {
@@ -33,31 +34,65 @@ export default function Transfer() {
 
     return (
         <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-            <div className="flex gap-4 items-center flex-col sm:flex-row">
-                <h1>Transfer Funds</h1>
-                <form onSubmit={handleSubmit}>
-                    <div>
-                        <label htmlFor="from">Sender Address:</label>
-                        <input type="text" id="from" name="from" required />
+            <h1 className="text-3xl font-bold mb-8">Transfer Funds</h1>
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-md">
+                    <div className="flex flex-col">
+                        <label htmlFor="from" className="text-sm font-medium mb-1">
+                            Sender Address:
+                        </label>
+                        <input
+                            type="text"
+                            id="from"
+                            name="from"
+                            required
+                            className="border border-gray-300 p-2 rounded-md"
+                        />
                     </div>
-                    <div>
-                        <label htmlFor="to">Recipient Address:</label>
-                        <input type="text" id="to" name="to" required />
+                    <div className="flex flex-col">
+                        <label htmlFor="to" className="text-sm font-medium mb-1">
+                            Recipient Address:
+                        </label>
+                        <input
+                            type="text"
+                            id="to"
+                            name="to"
+                            required
+                            className="border border-gray-300 p-2 rounded-md"
+                        />
                     </div>
-                    <div>
-                        <label htmlFor="amount">Amount (ETH):</label>
-                        <input type="number" id="amount" name="amount" step="0.0001" required />
+                    <div className="flex flex-col">
+                        <label htmlFor="amount" className="text-sm font-medium mb-1">
+                            Amount (ETH):
+                        </label>
+                        <input
+                            type="number"
+                            id="amount"
+                            name="amount"
+                            step="0.0001"
+                            required
+                            className="border border-gray-300 p-2 rounded-md"
+                        />
                     </div>
-                    <button type="submit" disabled={isLoading}>
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
                         {isLoading ? "Processing..." : "Send"}
                     </button>
                 </form>
-                {status && !isLoading && (
-                    <div>
-                        <p>{status}</p>
-                    </div>
-                )}
             </div>
+
+            {status && !isLoading && (
+                <div
+                    className={`p-4 rounded-md mt-4 ${status.startsWith("Error") ? "bg-red-500 text-white" : "bg-black text-white"
+                        }`}
+                >
+                    <p>{status}</p>
+                </div>
+            )}
         </div>
     );
 }
