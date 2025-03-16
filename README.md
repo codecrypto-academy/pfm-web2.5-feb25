@@ -143,7 +143,7 @@ The application allows to launch a private network based on Hyperledger Besu wit
 
   You should start Requesting Tokens before doing anything else because you will start with no funds.
 
-  For this interactions you must get the addresses from de proyect files: networks/$networkName/$nodeName/address. If you prefer, you can use the private key (networks/$networkName/$nodeName/key) of each to import accounts on Metamask(need to config the network you are going to use).
-  
+  For this interactions you must get the addresses from de proyect files: networks/$networkName/$nodeName/address. If you prefer, you can use the private key (networks/$networkName/$nodeName/key) of each to import accounts on Metamask(need to config the network you are going to use). The current config is set with Bootnode as RPC.
+
 
 For any further assistance, refer to the [Next.js Documentation](https://nextjs.org/docs) and [Hyperledger Besu Documentation](https://besu.hyperledger.org).
