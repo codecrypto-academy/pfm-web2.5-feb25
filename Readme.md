@@ -65,9 +65,15 @@ You can run the following commands in the `frontback` directory:
 ## 📌Videos by sections on how to use it
 ### 1️⃣ Manager
 From the Manager view, we can use Create New Network to automatically create a network with 4 nodes. This will also generate a transfer between nodes 1 and 2 to test it and set the necessary environment variables for operation.
-* 🎥[![Manager]](https://www.loom.com/share/7b0b4185c9764443b42ae36efe25f7be?sid=0b8e88fc-b1ac-4e9b-995c-6b1c4eb69690)
 
+* 🎥[Manager](https://www.loom.com/share/7b0b4185c9764443b42ae36efe25f7be?sid=0b8e88fc-b1ac-4e9b-995c-6b1c4eb69690)
 
+Once the network is created, we can add nodes, remove them, and delete the entire network. Node 1, being the validator, cannot be deleted independently. Nodes are created incrementally, so if you delete node 5 and node 6 exists, when creating a new node, node 5 will be created again, not node 7.
+
+### 2️⃣ Faucet
+In the faucet section, you can connect a MetaMask account and receive an ETH. The MetaMask connection is available as a global context, so it can be used from other sections as well.
+
+* 🎥[Faucet](https://www.loom.com/share/871e7a6bb788438db5bb1a38a255bd1d?sid=62d9479c-22e4-45e0-9dff-da035699dd95)
 
 ## 🤝 Contribution
 If you want to contribute to the project:
