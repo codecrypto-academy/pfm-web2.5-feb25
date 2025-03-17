@@ -51,7 +51,7 @@ export default function Home() {
         </Link>
       </div>
 
-      <div className="flex flex-col md:flex-row w-full items-center justify-center gap-4 py-4">
+      <div className="flex flex-col md:flex-row w-full justify-center gap-4 py-4">
         <div className="flex-1">
           <Card className="max-w-[400px]">
             <CardHeader className="flex gap-3">
@@ -68,8 +68,8 @@ export default function Home() {
             <Divider />
             <CardBody>
               <p>
-                Go to the Dashboard and create a network to start managing
-                nodes.
+                Go to the Dashboard and create a network, or start using default
+                one, to start managing nodes.
               </p>
             </CardBody>
             <Divider />
@@ -95,7 +95,11 @@ export default function Home() {
             </CardHeader>
             <Divider />
             <CardBody>
-              <p>Go to the Dashboard and create too many nodes as you want.</p>
+              <p>Go to the Dashboard and create too many nodes as you need.</p>
+              <p>
+                You have to introduce the node name and the ports the node will
+                use.
+              </p>
             </CardBody>
             <Divider />
             <CardFooter>
@@ -121,6 +125,10 @@ export default function Home() {
             <Divider />
             <CardBody>
               <p>Go to the Dashboard start, stop or delete nodes.</p>
+              <p>
+                Manage them as you need, you can also check the status of each
+                node.
+              </p>
             </CardBody>
             <Divider />
             <CardFooter>

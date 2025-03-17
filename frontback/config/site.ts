@@ -62,7 +62,7 @@ export const siteConfig = {
   links: {
     github: "https://github.com/DaLZmG",
     twitter: "https://twitter.com/dalzemag",
-    docs: "https://heroui.com",
+    docs: "https://github.com/DaLZmG/pfm-web2.5-feb25/blob/main/frontback/README.md",
     discord: "https://discord.gg/9b6yyZKmH4",
     sponsor: "https://codecrypto.academy",
   },
