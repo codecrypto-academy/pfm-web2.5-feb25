@@ -26,11 +26,15 @@ import {
   getNetworkName,
   setNetworkName,
   deleteNode,
+  sleep,
+  getNodeEnode,
+  addNode,
 } from "../services/network";
 import { checkMongoDB } from "../services/mongodb/db";
 import { CompleteNode } from "../services/nodes";
 
 import NewNode from "@/components/newNode";
+import { parse } from "path";
 
 interface ErrorMsg {
   title: string | null;
@@ -406,14 +410,15 @@ export default function Dashboard() {
     // console.log("callDeleteNode", node);
     try {
       setStatusLoading(true);
-      deleteNodeData(node);
-      await deleteNode(node);
-      await refreshNodesStatus();
-      setMessage({
-        title: `${node.name} deleted`,
-        content: `${node.name} deleted successfully`,
-        type: "success",
-      });
+      if (await deleteNode(node)) {
+        deleteNodeData(node);
+        await refreshNodesStatus();
+        setMessage({
+          title: `${node.name} deleted`,
+          content: `${node.name} deleted successfully`,
+          type: "success",
+        });
+      }
     } catch (error) {
       setStatusLoading(false);
       setMessage({
@@ -421,19 +426,22 @@ export default function Dashboard() {
         content: `${error}`,
         type: "danger",
       });
+    } finally {
+      setStatusLoading(false);
     }
+  };
+
+  const generateENode = async () => {
+    const genNode = await getNodeEnode(nodes[0]);
+    console.log('genNode', genNode);
+    console.log('nodes', nodes);
+    nodes[0].enode = genNode;
+    setNodes([...nodes]);
   };
 
   const refreshNodesStatus = async () => {
     setNodesStatusLoading(true);
     // console.log("Refreshed nodes Before:", nodes);
-
-    // await Promise.all(
-    //   nodes.map(async (node) => {
-    //     // return await getNodeStatus(node);
-    //     node.status = await getNodeStatus(node);
-    //   }),
-    // );
 
     const updatedNodes = await Promise.all(
       nodes.map(async (node) => ({
@@ -442,8 +450,10 @@ export default function Dashboard() {
       })),
     );
 
-    // console.log("Refreshed nodes After:", updatedNodes);
+    console.log("Refreshed nodes After:", updatedNodes);
     setNodes(updatedNodes);
+
+    // localStorage.setItem("nodes", JSON.stringify(updatedNodes));
 
     setStatusLoading(false);
   };
@@ -452,36 +462,39 @@ export default function Dashboard() {
     setNetName(newNetName);
   };
 
-  const updateNodes = (newNodes: CompleteNode[]) => {
+  const updateNodes = async (newNodes: CompleteNode[]) => {
     console.log(JSON.stringify(newNodes));
     setNodes(newNodes);
     localStorage.setItem("nodes", JSON.stringify(newNodes));
+    await refreshNodesStatus();
   };
 
   const deleteNodeData = (node: CompleteNode) => {
     console.log("Deleting node:", node);
-    setNodes((prevNodes) => prevNodes.filter((node) => node !== node));
+    const newNodes = nodes.filter((n) => n !== node);
+
+    localStorage.setItem("nodes", JSON.stringify(newNodes));
+    setNodes(newNodes);
   };
 
   const updateLoading = (loading: boolean) => {
     setStatusLoading(loading);
   };
 
-  const initComoponent = async () => {
-    setStatusLoading(true);
-    checkDockerStatus();
-    // callCheckMongoDB();
-    refreshNetworkName();
-
+  const loadStoredNodes = async () => {
     const storedNodes = localStorage.getItem("nodes");
-    // console.log(storedNodes);
 
     if (storedNodes) {
       try {
         const parsedNodes = JSON.parse(storedNodes);
 
-        // console.log("Parsed nodes:", parsedNodes);
         await Promise.all([setNodes(parsedNodes)]);
+
+        Promise.all(
+          parsedNodes.map(async (node: CompleteNode) => {
+            addNode(node);
+          }),
+        );
       } catch (error) {
         setMessage({
           title: `Error parsing stored nodes`,
@@ -490,8 +503,20 @@ export default function Dashboard() {
         });
       }
     }
+  };
 
-    // refreshNodesStatus();
+  const printNodes = () => {
+    console.log("Nodes:", nodes);
+  };
+
+  const initComoponent = async () => {
+    setStatusLoading(true);
+    checkDockerStatus();
+    // callCheckMongoDB();
+
+    await loadStoredNodes();
+
+    await refreshNetworkName();
 
     // const intervalo = setInterval(() => {
     //   refreshNodeStatus();
@@ -501,6 +526,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    console.log("useEffect Init");
     initComoponent();
   }, []);
 
@@ -518,13 +544,15 @@ export default function Dashboard() {
   }, [message]);
 
   useEffect(() => {
-    console.log("Nodes updated:", nodes);
+    console.log("useEffect nodes", nodes);
     refreshNodesStatus();
-    localStorage.setItem("nodes", JSON.stringify(nodes));
+    // localStorage.setItem("nodes", JSON.stringify(nodes));
   }, [nodes && !nodesStatusLoading]);
+  // }, [nodes]);
 
   const renderCell = useCallback(
     (node: CompleteNode, columnKey: string) => {
+      // console.log("renderCell", node, columnKey);
       const cellValue = node[columnKey as keyof CompleteNode];
 
       switch (columnKey) {
@@ -616,6 +644,9 @@ export default function Dashboard() {
       <div className="flex flex-row justify-between items-center py-8">
         <Network netName={netName} updateNetworkName={updateNetworkName} />
 
+        <Button className="" color="primary" onPress={printNodes}>
+          Print nodes
+        </Button>
         <Button className="" color="primary" onPress={refreshNodesStatus}>
           Refresh nodes status
         </Button>

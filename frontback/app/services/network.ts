@@ -1,8 +1,11 @@
 "use server";
 
-import { BesuClique, Node } from "@dalzemag/besu-clique";
+import { exec } from "child_process";
 
-const besuClique = new BesuClique();
+import { BesuClique, Node } from "@dalzemag/besu-clique";
+import { CompleteNode } from "./nodes";
+
+const besuClique = new BesuClique("besuClique");
 
 export const createNetwork = async (netName?: string): Promise<boolean> => {
   return new Promise(async (resolve, reject) => {
@@ -106,6 +109,20 @@ export const addNode = async (node: Node): Promise<void> => {
   });
 };
 
+export const updateNodeEnode = async (masterNode: CompleteNode) => {
+  const updatedNodes = besuClique
+    .getNodes()
+    .map((node) =>
+      node.name === masterNode.name
+        ? { ...node, enode: masterNode.enode }
+        : node,
+    );
+
+  besuClique.removeNode(masterNode.name);
+  besuClique.addNode(updatedNodes[0]);
+  console.log("updateNodeEnode", besuClique.getNodes());
+};
+
 export const generateAddress = async (node: Node): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -118,10 +135,10 @@ export const generateAddress = async (node: Node): Promise<string> => {
   });
 };
 
-export const createGenesis = async (): Promise<void> => {
+export const createGenesis = async (address: string): Promise<void> => {
   return new Promise(async (resolve, reject) => {
     try {
-      await besuClique.createGenesis(besuClique.getNodes()[0].address!);
+      await besuClique.createGenesis(address);
       resolve();
     } catch (error) {
       reject(error);
@@ -129,13 +146,53 @@ export const createGenesis = async (): Promise<void> => {
   });
 };
 
+// export const getNodeEnode = async (node: Node): Promise<string> => {
+//   return new Promise(async (resolve, reject) => {
+//     try {
+//       let newNode = node;
+
+//       await besuClique.setNodeEnode(newNode);
+//       console.log("TS enode", newNode);
+//       resolve(newNode.enode!);
+//     } catch (error) {
+//       reject(error);
+//     }
+//   });
+// };
+
 export const getNodeEnode = async (node: Node): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
-      await besuClique.setNodeEnode(node);
-      resolve(node.enode!);
+      await sleep(10000);
+      const netName = besuClique.getNetworkName();
+
+      exec(
+        `docker logs '${netName}-${node.name}' | grep "enode" | grep -o 'enode://[^ ]*@'`,
+        async (error, stdout, stderr) => {
+          if (error) {
+            console.log("error", error);
+            resolve("");
+          }
+          if (stderr) {
+            console.log("stderr", stderr);
+            resolve("");
+          }
+
+          let updatedNode = node;
+
+          if (stdout.includes("\n")) {
+            stdout = stdout.replace("\n", "");
+          }
+          // updatedNode = await this.getNodeDockerIP(node);
+          updatedNode.enode =
+            stdout + updatedNode.dockerIP + ":" + updatedNode.portP2P;
+          resolve(updatedNode.enode!);
+        },
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      reject(error);
+      console.log("error", error);
+      resolve("");
     }
   });
 };
@@ -146,6 +203,9 @@ export const createNode = async (newNode: Node): Promise<void> => {
       if (besuClique.getNodes().length === 1) {
         await besuClique.createNodeMaster(newNode);
       } else {
+        // console.log("newNode", newNode);
+        // console.log(besuClique.getNodes());
+        // console.log("besuClique.getNodes()[0].enode", besuClique.getNodes()[0].enode);
         await besuClique.createNodeSlave(
           newNode,
           besuClique.getNodes()[0].enode!,
@@ -158,11 +218,11 @@ export const createNode = async (newNode: Node): Promise<void> => {
   });
 };
 
-export const deleteNode = async (node: Node): Promise<void> => {
+export const deleteNode = async (node: Node): Promise<boolean> => {
   return new Promise(async (resolve, reject) => {
     try {
       await besuClique.deleteNode(node);
-      resolve();
+      resolve(true);
     } catch (error) {
       reject(error);
     }
