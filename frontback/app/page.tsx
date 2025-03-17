@@ -112,7 +112,7 @@ export default function Home() {
                 3
               </div>
               <div className="flex flex-col">
-                <p className="text-xl">Create nodes</p>
+                <p className="text-xl">Manage nodes</p>
                 <p className="text-small text-default-500">
                   Nodes are the core of the network
                 </p>
@@ -120,7 +120,7 @@ export default function Home() {
             </CardHeader>
             <Divider />
             <CardBody>
-              <p>Go to the Dashboard and create too many nodes as you want.</p>
+              <p>Go to the Dashboard start, stop or delete nodes.</p>
             </CardBody>
             <Divider />
             <CardFooter>

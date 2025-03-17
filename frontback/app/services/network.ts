@@ -5,7 +5,18 @@ import { exec } from "child_process";
 import { BesuClique, Node } from "@dalzemag/besu-clique";
 import { CompleteNode } from "./nodes";
 
-const besuClique = new BesuClique("besuClique");
+let besuClique = new BesuClique("besuClique");
+
+export const resetInstance = async (): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      besuClique = new BesuClique("besuClique");
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
 
 export const createNetwork = async (netName?: string): Promise<boolean> => {
   return new Promise(async (resolve, reject) => {
@@ -101,7 +112,7 @@ export const startNode = async (node: Node): Promise<void> => {
 export const addNode = async (node: Node): Promise<void> => {
   return new Promise(async (resolve, reject) => {
     try {
-      await besuClique.addNode(node);
+      besuClique.addNode(node);
       resolve();
     } catch (error) {
       reject(error);
@@ -163,7 +174,7 @@ export const createGenesis = async (address: string): Promise<void> => {
 export const getNodeEnode = async (node: Node): Promise<string> => {
   return new Promise(async (resolve, reject) => {
     try {
-      await sleep(10000);
+      // await sleep(10000);
       const netName = besuClique.getNetworkName();
 
       exec(
@@ -183,7 +194,6 @@ export const getNodeEnode = async (node: Node): Promise<string> => {
           if (stdout.includes("\n")) {
             stdout = stdout.replace("\n", "");
           }
-          // updatedNode = await this.getNodeDockerIP(node);
           updatedNode.enode =
             stdout + updatedNode.dockerIP + ":" + updatedNode.portP2P;
           resolve(updatedNode.enode!);
@@ -196,6 +206,40 @@ export const getNodeEnode = async (node: Node): Promise<string> => {
     }
   });
 };
+
+export const getNodeDockerIP = async (node: Node): Promise<string> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const netName = besuClique.getNetworkName();
+
+      exec(
+        `docker inspect '${netName}-${node.name}'`,
+        (error, stdout, stderr) => {
+          if (error) {
+            resolve("");
+          } if (stderr) {
+            resolve("");
+          }
+
+          const nodeInfo = JSON.parse(stdout);
+
+          if (
+            typeof nodeInfo[0]?.NetworkSettings?.Networks?.[netName]
+              ?.IPAddress == "string"
+          ) {
+            let updatedNode = node;
+
+            updatedNode.dockerIP = nodeInfo[0]?.NetworkSettings?.Networks?.[netName]?.IPAddress;
+            resolve(updatedNode.dockerIP!);
+          } else {
+            resolve("");
+          }
+        })
+    } catch (error) {
+      resolve("");
+    }
+  });
+}
 
 export const createNode = async (newNode: Node): Promise<void> => {
   return new Promise(async (resolve, reject) => {

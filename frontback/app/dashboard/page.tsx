@@ -451,7 +451,7 @@ export default function Dashboard() {
     );
 
     console.log("Refreshed nodes After:", updatedNodes);
-    setNodes(updatedNodes);
+    setNodes(() => updatedNodes);
 
     // localStorage.setItem("nodes", JSON.stringify(updatedNodes));
 
@@ -463,8 +463,8 @@ export default function Dashboard() {
   };
 
   const updateNodes = async (newNodes: CompleteNode[]) => {
-    console.log(JSON.stringify(newNodes));
-    setNodes(newNodes);
+    // console.log(newNodes);
+    setNodes(() => newNodes);
     localStorage.setItem("nodes", JSON.stringify(newNodes));
     await refreshNodesStatus();
   };
@@ -474,7 +474,7 @@ export default function Dashboard() {
     const newNodes = nodes.filter((n) => n !== node);
 
     localStorage.setItem("nodes", JSON.stringify(newNodes));
-    setNodes(newNodes);
+    setNodes(() => newNodes);
   };
 
   const updateLoading = (loading: boolean) => {
@@ -488,7 +488,7 @@ export default function Dashboard() {
       try {
         const parsedNodes = JSON.parse(storedNodes);
 
-        await Promise.all([setNodes(parsedNodes)]);
+        await Promise.all([setNodes(() => parsedNodes)]);
 
         Promise.all(
           parsedNodes.map(async (node: CompleteNode) => {
@@ -644,12 +644,12 @@ export default function Dashboard() {
       <div className="flex flex-row justify-between items-center py-8">
         <Network netName={netName} updateNetworkName={updateNetworkName} />
 
-        <Button className="" color="primary" onPress={printNodes}>
+        {/* <Button className="" color="primary" onPress={printNodes}>
           Print nodes
         </Button>
         <Button className="" color="primary" onPress={refreshNodesStatus}>
           Refresh nodes status
-        </Button>
+        </Button> */}
       </div>
 
       <Table aria-label="Example table with custom cells" className="w-full">

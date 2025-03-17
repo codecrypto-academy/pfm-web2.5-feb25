@@ -19,6 +19,7 @@ import {
   createNode,
   generateAddress,
   getNodeEnode,
+  getNodeDockerIP,
   sleep,
   updateNodeEnode,
 } from "@/app/services/network";
@@ -48,16 +49,31 @@ export default function NewNode(props: IProps) {
       setNodeErrors({ nodeName: "nodeName is required" });
 
       return;
+    } else if (!data.portJSON) {
+      setNodeErrors({ portJSON: "portJSON is required" });
+
+      return;
+    } else if (!data.portWS) {
+      setNodeErrors({ portWS: "portWS is required" });
+
+      return;
+    } else if (!data.portP2P) {
+      setNodeErrors({ portP2P: "portP2P is required" });
+
+      return;
     }
 
     try {
       const newNodeName = data.newNodeName;
+      const portJSON = data.portJSON;
+      const portWS = data.portWS;
+      const portP2P = data.portP2P;
 
       const newNode: CompleteNode = {
         name: newNodeName as string,
-        portJSON: 8545,
-        portWS: 8546,
-        portP2P: 30303,
+        portJSON: portJSON as unknown as number,
+        portWS: portWS as unknown as number,
+        portP2P: portP2P as unknown as number,
         status: "unknown",
       };
 
@@ -82,9 +98,11 @@ export default function NewNode(props: IProps) {
         await sleep(10000);
         // setTimeout(async () => {
         const genNode = await getNodeEnode(newNode);
+        const genDockerIP = await getNodeDockerIP(newNode);
 
         // console.log("genNode", genNode);
         newNode.enode = genNode;
+        newNode.dockerIP = genDockerIP;
         // nodes[0] .enode = genNode;
         // setNodes([...nodes]);
         // }, 10000);
@@ -133,13 +151,46 @@ export default function NewNode(props: IProps) {
                   <Input
                     // autoFocus
                     isRequired
-                    defaultValue="Node1"
+                    defaultValue=""
                     errorMessage="Please, enter a valid node name"
                     label="Node Name"
                     labelPlacement="outside"
                     name="newNodeName"
-                    placeholder="Enter the name for the new node you want to create"
+                    placeholder="Node1"
                     type="text"
+                  />
+                  <Input
+                    // autoFocus
+                    isRequired
+                    defaultValue=""
+                    errorMessage="Please, enter a valid port number"
+                    label="Port JSON-RPC"
+                    labelPlacement="outside"
+                    name="portJSON"
+                    placeholder="8545"
+                    type="number"
+                  />
+                  <Input
+                    // autoFocus
+                    isRequired
+                    defaultValue=""
+                    errorMessage="Please, enter a valid port number"
+                    label="Port WS"
+                    labelPlacement="outside"
+                    name="portWS"
+                    placeholder="8546"
+                    type="number"
+                  />
+                  <Input
+                    // autoFocus
+                    isRequired
+                    defaultValue=""
+                    errorMessage="Please, enter a valid port number"
+                    label="Port P2P"
+                    labelPlacement="outside"
+                    name="portP2P"
+                    placeholder="30303"
+                    type="number"
                   />
                   {/* <Checkbox name="isValidator" value="isValidator">
                     Is Validator
