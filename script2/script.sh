@@ -107,14 +107,14 @@ host-allowlist=["*"]
 ' > ./besu-network/bootnode-config.toml
 
 # Levantar contenedor de nodo minero
-docker run -d --name miner-node --label besu-network --network besu-network --ip 172.19.0.2 \
+docker run -d --name miner-node --label besu-network --network besu-network --ip 172.19.0.3 \
 -v ./besu-network:/data hyperledger/besu:latest \
 --config-file=/data/config.toml \
 --data-path=/data/miner-node/data \
 --node-private-key-file=/data/miner-node/key
 
 # Levantar contenedor de bootnode
-docker run -d --name bootnode --label besu-network --network besu-network --ip 172.19.0.3 \
+docker run -d --name bootnode --label besu-network --network besu-network --ip 172.19.0.2 \
 -v ./besu-network/:/data hyperledger/besu:latest \
 --config-file=/data/bootnode-config.toml \
 --data-path=/data/bootnode/data \

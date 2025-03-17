@@ -1,15 +1,20 @@
 {
   "name": "besu-management",
   "version": "1.0.0",
-  "description": "Can create, manage, and delete Besu nodes with docker.",
+  "description": "Can create, delete, and manage Besu nodes with docker.",
   "main": "\"dist/index.js\"",
   "types": "dist/index.d.ts",
   "files": [
-      "/dist"
+    "/dist"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "David Galaviz",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "elliptic": "^6.6.1",
+    "ethers": "^6.13.5",
+    "keccak256": "^1.0.6"
+  }
 }

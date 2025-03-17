@@ -3,12 +3,12 @@ const { ethers } = require("ethers");
 const args = process.argv.slice(2);
 
 async function main() {
-  const rpc_port = 1002;
-  const senderPriv = "0xadf216fecdb47469aa68f43dfa0d2c25509c79c5f5111f02f273c961f706d77c";
-  const reciverAddress = "0x1e591cdbcd78d967282f77175d0333858a9f5e69";
-  const amount = "5";
+  const rpc_port = args[0];
+  const senderPriv = args[1];
+  const reciverAddress = args[2];
+  const amount = args[3];
   const provider = new ethers.JsonRpcProvider(`http://localhost:${rpc_port}/`, {
-    chainId: 2467,
+    chainId: 246800,
     name: "private"
   });
   const signer = new ethers.Wallet(senderPriv);
@@ -18,7 +18,7 @@ async function main() {
 
   const tx = await signerConnected.sendTransaction({
     to: reciverAddress,
-    value: ethers.parseEther("10"), // 0.1 ETH
+    value: ethers.parseEther(amount), // 0.1 ETH
     gasLimit: 21000,
     gasPrice: (provider.getFeeData()).gasPrice
   });
@@ -34,7 +34,6 @@ async function main() {
     amount,
     reciept,
   });
-  return "hello";
 }
 
 main();

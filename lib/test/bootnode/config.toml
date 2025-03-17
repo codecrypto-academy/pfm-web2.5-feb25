@@ -1,0 +1,13 @@
+
+genesis-file="/data/genesis.json"
+node-private-key-file="/data/bootnode/key"
+data-path="/data/bootnode/data"
+
+p2p-host="0.0.0.0"
+p2p-port="30303"
+p2p-enabled=true
+
+    
+
+discovery-enabled=true
+
