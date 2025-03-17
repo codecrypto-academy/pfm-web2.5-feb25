@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Alert,
   Button,
@@ -25,12 +25,12 @@ import {
   stopNode,
   getNetworkName,
   setNetworkName,
+  deleteNode,
 } from "../services/network";
 import { checkMongoDB } from "../services/mongodb/db";
+import { CompleteNode } from "../services/nodes";
 
-interface CompleteNode extends Node {
-  status: "active" | "stoped" | "unknown";
-}
+import NewNode from "@/components/newNode";
 
 interface ErrorMsg {
   title: string | null;
@@ -320,11 +320,12 @@ const statusColorMap: {
 };
 
 export default function Dashboard() {
-  const [dockerStatus, setDockerStatus] = React.useState<boolean>(false);
-  const [netName, setNetName] = React.useState<string | null>(null);
-  const [nodes, setNodes] = React.useState<CompleteNode[]>(mockNodes);
-  const [statusLoading, setStatusLoading] = React.useState<boolean>(true);
-  const [message, setMessage] = React.useState<ErrorMsg | null>(null);
+  const [dockerStatus, setDockerStatus] = useState<boolean>(false);
+  const [netName, setNetName] = useState<string | null>(null);
+  const [nodes, setNodes] = useState<CompleteNode[]>([]);
+  const [statusLoading, setStatusLoading] = useState<boolean>(true);
+  const [nodesStatusLoading, setNodesStatusLoading] = useState<boolean>(false);
+  const [message, setMessage] = useState<ErrorMsg | null>(null);
 
   const checkDockerStatus = async () => {
     try {
@@ -401,32 +402,109 @@ export default function Dashboard() {
     }
   };
 
+  const callDeleteNode = async (node: CompleteNode) => {
+    // console.log("callDeleteNode", node);
+    try {
+      setStatusLoading(true);
+      deleteNodeData(node);
+      await deleteNode(node);
+      await refreshNodesStatus();
+      setMessage({
+        title: `${node.name} deleted`,
+        content: `${node.name} deleted successfully`,
+        type: "success",
+      });
+    } catch (error) {
+      setStatusLoading(false);
+      setMessage({
+        title: `Error deleting node ${node.name}`,
+        content: `${error}`,
+        type: "danger",
+      });
+    }
+  };
+
   const refreshNodesStatus = async () => {
-    await Promise.all(
-      nodes.map(async (node) => {
-        // return await getNodeStatus(node);
-        node.status = await getNodeStatus(node);
-      })
+    setNodesStatusLoading(true);
+    // console.log("Refreshed nodes Before:", nodes);
+
+    // await Promise.all(
+    //   nodes.map(async (node) => {
+    //     // return await getNodeStatus(node);
+    //     node.status = await getNodeStatus(node);
+    //   }),
+    // );
+
+    const updatedNodes = await Promise.all(
+      nodes.map(async (node) => ({
+        ...node,
+        status: await getNodeStatus(node),
+      })),
     );
+
+    // console.log("Refreshed nodes After:", updatedNodes);
+    setNodes(updatedNodes);
 
     setStatusLoading(false);
   };
 
-  React.useEffect(() => {
+  const updateNetworkName = (newNetName: string) => {
+    setNetName(newNetName);
+  };
+
+  const updateNodes = (newNodes: CompleteNode[]) => {
+    console.log(JSON.stringify(newNodes));
+    setNodes(newNodes);
+    localStorage.setItem("nodes", JSON.stringify(newNodes));
+  };
+
+  const deleteNodeData = (node: CompleteNode) => {
+    console.log("Deleting node:", node);
+    setNodes((prevNodes) => prevNodes.filter((node) => node !== node));
+  };
+
+  const updateLoading = (loading: boolean) => {
+    setStatusLoading(loading);
+  };
+
+  const initComoponent = async () => {
     setStatusLoading(true);
     checkDockerStatus();
     // callCheckMongoDB();
     refreshNetworkName();
-    refreshNodesStatus();
+
+    const storedNodes = localStorage.getItem("nodes");
+    // console.log(storedNodes);
+
+    if (storedNodes) {
+      try {
+        const parsedNodes = JSON.parse(storedNodes);
+
+        // console.log("Parsed nodes:", parsedNodes);
+        await Promise.all([setNodes(parsedNodes)]);
+      } catch (error) {
+        setMessage({
+          title: `Error parsing stored nodes`,
+          content: `${error}`,
+          type: "danger",
+        });
+      }
+    }
+
+    // refreshNodesStatus();
 
     // const intervalo = setInterval(() => {
     //   refreshNodeStatus();
     // }, 5000);
 
     // return () => clearInterval(intervalo);
+  };
+
+  useEffect(() => {
+    initComoponent();
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (message) {
       addToast({
         title: message.title,
@@ -439,7 +517,13 @@ export default function Dashboard() {
     }
   }, [message]);
 
-  const renderCell = React.useCallback(
+  useEffect(() => {
+    console.log("Nodes updated:", nodes);
+    refreshNodesStatus();
+    localStorage.setItem("nodes", JSON.stringify(nodes));
+  }, [nodes && !nodesStatusLoading]);
+
+  const renderCell = useCallback(
     (node: CompleteNode, columnKey: string) => {
       const cellValue = node[columnKey as keyof CompleteNode];
 
@@ -492,7 +576,9 @@ export default function Dashboard() {
               </Tooltip>
               <Tooltip color="danger" content="Delete">
                 <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                  <DeleteIcon />
+                  <button onClick={() => callDeleteNode(node)}>
+                    <DeleteIcon />
+                  </button>
                 </span>
               </Tooltip>
             </div>
@@ -501,7 +587,7 @@ export default function Dashboard() {
           return cellValue;
       }
     },
-    []
+    [nodes],
   );
 
   if (dockerStatus === false) {
@@ -527,7 +613,14 @@ export default function Dashboard() {
 
   return (
     <>
-      <Network netName="besuClique" />
+      <div className="flex flex-row justify-between items-center py-8">
+        <Network netName={netName} updateNetworkName={updateNetworkName} />
+
+        <Button className="" color="primary" onPress={refreshNodesStatus}>
+          Refresh nodes status
+        </Button>
+      </div>
+
       <Table aria-label="Example table with custom cells" className="w-full">
         <TableHeader columns={columns}>
           {(column) => (
@@ -549,6 +642,11 @@ export default function Dashboard() {
           )}
         </TableBody>
       </Table>
+      <NewNode
+        nodes={nodes}
+        setLoading={updateLoading}
+        updateNodes={updateNodes}
+      />
     </>
   );
 }

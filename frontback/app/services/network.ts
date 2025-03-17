@@ -95,6 +95,80 @@ export const startNode = async (node: Node): Promise<void> => {
   });
 };
 
+export const addNode = async (node: Node): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await besuClique.addNode(node);
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const generateAddress = async (node: Node): Promise<string> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const resp = await besuClique.generateAddress(node);
+
+      resolve(resp);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const createGenesis = async (): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await besuClique.createGenesis(besuClique.getNodes()[0].address!);
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const getNodeEnode = async (node: Node): Promise<string> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await besuClique.setNodeEnode(node);
+      resolve(node.enode!);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const createNode = async (newNode: Node): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (besuClique.getNodes().length === 1) {
+        await besuClique.createNodeMaster(newNode);
+      } else {
+        await besuClique.createNodeSlave(
+          newNode,
+          besuClique.getNodes()[0].enode!,
+        );
+      }
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const deleteNode = async (node: Node): Promise<void> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await besuClique.deleteNode(node);
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 export const sleep = async (ms: number): Promise<void> => {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);

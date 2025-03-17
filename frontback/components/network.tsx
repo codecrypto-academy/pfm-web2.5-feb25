@@ -12,14 +12,15 @@ import {
 } from "@heroui/react";
 import { useState } from "react";
 
-import { createNetwork } from "@/app/services/network";
+import { createNetwork, setNetworkName } from "@/app/services/network";
 
 interface IProps {
-  netName: string;
+  netName: string | null;
+  updateNetworkName: (name: string) => void;
 }
 
 export default function Network(props: IProps) {
-  const { netName } = props;
+  const { netName, updateNetworkName } = props;
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [errors, setErrors] = useState({});
 
@@ -37,12 +38,13 @@ export default function Network(props: IProps) {
       return;
     }
 
-    // const result = callServer(data);
     const newName = data.networkName;
 
-    const resp = await createNetwork(newName as string);
     console.log(JSON.stringify(newName));
+    const resp = await createNetwork(newName as string);
     console.log(resp);
+
+    updateNetworkName(newName as string);
     onOpenChange();
 
     // setErrors(result.errors);
@@ -73,17 +75,18 @@ export default function Network(props: IProps) {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Modal Title
+                Network creation/change
               </ModalHeader>
               <ModalBody>
                 <Form validationErrors={errors} onSubmit={callCreateNetwork}>
                   <Input
+                    // autoFocus
                     isRequired
                     errorMessage="Please, enter a valid network name"
                     label="Network Name"
                     labelPlacement="outside"
                     name="networkName"
-                    placeholder="Enter the network name"
+                    placeholder="Enter the network name you want to create"
                     type="text"
                   />
                   <div className="flex w-full justify-end pt-4 gap-4">
