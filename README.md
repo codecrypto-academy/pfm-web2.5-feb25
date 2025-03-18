@@ -108,3 +108,13 @@ This script should output a transaction reciept with a status 1 (successfull)
 This script creates a public private key pair
 [createPrivatePublicKeys.pdf](https://github.com/user-attachments/files/19304584/createPrivatePublicKeys.pdf)
 
+# Part 2
+# TypeScript Library for managing a BESU network
+[UMLClassDiagram.pdf](https://github.com/user-attachments/files/19307118/UMLClassDiagram.pdf)
+
+
+## 🔧 Installation 
+You can install the library with the following command:
+   ```bash
+   npm i besu-management
+   ```
