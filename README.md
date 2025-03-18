@@ -22,6 +22,11 @@ The project has the following file structure:
 # Script for automatic creation of a Besu network
 **This script creates a basic BESU network with the following 3 nodes: rpc-node, bootnode and a miner-node(Initial validator)**
 
+❕This script will create a besu network with the following default configurations:
+- Name: besu-network
+- ChainID: 246700
+- Only the miner-node address will be specified in the alloc field
+
 
 ## ⚙️ Requirements  
 **Operating System**: The script is designed to work on Linux and macOS-based systems (it can also be run on Windows if you have a Bash-compatible environment, such as WSL).  
@@ -40,14 +45,12 @@ git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
 ```
 
 ## 🌟 Try it yourself
+
 1. Move to the script directory
 2. Execute the script with the following command
    ```bash
    ./script.sh
    ```
-
-## createBESUnetwork.sh  
-The `createBESUnetwork.sh` script automates the creation of a BESU network (Ethereum client compatible with testnets and Mainnet).  
 
 ### Running the Script  
 
@@ -57,32 +60,6 @@ Once you have cloned the repository, navigate to the project folder and make the
 cd pfm-web2.5-feb25
 chmod +x createBESUnetwork.sh
 ```
-
-### Executing the Script  
-
-The script accepts the following commands:  
-- **createBesuNetwork** | Creates a BESU network  
-- **deleteBesuNetwork** | Deletes a BESU network (Not yet implemented)  
-- **addBesuNode** | Adds a node to an existing BESU network (Not yet implemented)  
-- **deleteBesuNode** | Removes a node from an existing BESU network (Not yet implemented)  
-
-#### Example Usage:  
-```bash
-./createBESUnetwork.sh createBesuNetwork
-```
-
-### Command createBesuNetwork  
-This command in the `createBESUnetwork.sh` script creates a Besu network using Clique PoA.  
-<img src="https://github.com/user-attachments/assets/3c7e358c-34ea-4c7e-b89c-d007edc5b056" width="400">
-
-The script allows you to configure the following:  
-
-- **Chain ID**  
-- **Number of nodes**: The number of nodes you want in the BESU network.  
-- **Network name**: The name you want to assign to the network being created.  
-- **Network IP**  
-- **Number of bootnodes**  
-- **Directory**: The directory where a folder for the network will be created.  
 
 ### Example Usage:  
 This command will create a BESU network called "TEST" with 4 nodes.  
