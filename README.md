@@ -35,6 +35,12 @@ The project has the following file structure:
 - [Docker](https://docs.docker.com/get-docker/): Utilized for creating and managing network nodes through containerization. Make sure Docker is installed and running.
 - Git: Needed to clone the project repository.
 
+**Js library dependecies**
+- Elliptic
+- keccak256
+- Ethers
+- Buffer
+
 ## 🔧 Installation  
 
 ### Clone the Repository  
@@ -44,14 +50,20 @@ Use the following command to clone the repository to your local machine:
 git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
 ```
 
+Install the dependecies
+1. Move to the script directory
+2. Execute the following command
+```bash
+npm install
+```
+
 ## 🌟 Try it yourself
 
-1. Move to the script directory
-2. Make sure the script has execution permissions
+1. Make sure the script has execution permissions
    ```bash
    chmod +x script.sh
    ```
-3. Execute the script with the following command
+2. Execute the script with the following command
    ```bash
    ./script.sh
    ```
@@ -75,6 +87,13 @@ git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
 [**Video**](https://youtu.be/ctXvr1Kd740)
 
 ## Transaction test script
+This script accepts the following parameters
+1. RPC port (1002)
+2. Sender private key (Has to start with 0x)
+3. Reciver address (Has to start with 0x)
+4. Amount to transfer
+
+This script should output a transaction reciept with a status 1 (successfull)
 [**Video**](https://youtu.be/19NL3LAkO6Y)
 
 ## 📖 Explanation
