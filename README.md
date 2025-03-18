@@ -96,6 +96,9 @@ This script accepts the following parameters
 This script should output a transaction reciept with a status 1 (successfull)
 
 ### Example Usage: 
+   ```bash
+   node transaction.js 1002 0xSenderPriv 0xReciverAddress 10
+   ```
 
 [**Video**](https://youtu.be/19NL3LAkO6Y)
 
