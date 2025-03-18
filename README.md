@@ -112,5 +112,5 @@ En esta sección, podras conectarte a una cuenta Ethereum desde metamask y elegi
 ***
 
 ## 🚀Lo relevante que tienen que conocer de la estrutura el proyecto
-<img src="screens/test.png" alt="script" width="500"/><br>
+<img src="screens/estrutura.png" alt="script" width="500"/><br>
 
