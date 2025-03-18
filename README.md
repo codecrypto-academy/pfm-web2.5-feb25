@@ -94,6 +94,9 @@ This script accepts the following parameters
 4. Amount to transfer
 
 This script should output a transaction reciept with a status 1 (successfull)
+
+### Example Usage: 
+
 [**Video**](https://youtu.be/19NL3LAkO6Y)
 
 ## 📖 Explanation
