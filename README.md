@@ -56,7 +56,8 @@ git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
    ./script.sh
    ```
 **Result**
-[Diagrama de flujo.pdf](https://github.com/user-attachments/files/19304447/Diagrama.de.flujo.pdf)
+[script.pdf](https://github.com/user-attachments/files/19304576/script.pdf)
+
 1. A running docker network called besu-network
 2. A directory called besu-network
 3. A directory for each of the nodes
@@ -78,4 +79,5 @@ git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
 ### Helper Scripts
 ## 🔐createPrivatePublicKeys.mjs
 This script creates a public private key pair
-![CodeCrypto (1)](https://github.com/user-attachments/assets/6957b154-1bd2-4162-98c2-1815688fee51)
+[createPrivatePublicKeys.pdf](https://github.com/user-attachments/files/19304584/createPrivatePublicKeys.pdf)
+
