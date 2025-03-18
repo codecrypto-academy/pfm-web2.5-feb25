@@ -1,4 +1,4 @@
-# Besu Netwwork management
+# Besu Network management
 The diferent elements in this project allow you to manage a private hyperlayer Besu network, using proof of Authority Clique
 
 ## Project Structure 
@@ -19,31 +19,33 @@ The project has the following file structure:
 ```
 
 # Part 1
-## Script for automatic creation of a Besu network
+# Script for automatic creation of a Besu network
+**This script creates a basic BESU network with the following 3 nodes: rpc-node, bootnode and a miner-node(Initial validator)**
 
 
-## Requirements  
-- **Operating System**: The script is designed to work on Linux and macOS-based systems (it can also be run on Windows if you have a Bash-compatible environment, such as WSL).  
-- **Dependencies**:  
-  - **Node.js**: Helper scripts are programmed with JS, to run them you must have the Node.js enviroment.
-  - **Docker**: This script uses a container based approach to create each of the network nodes.  
-  - **Git**: To clone the repository.
+## ⚙️ Requirements  
+**Operating System**: The script is designed to work on Linux and macOS-based systems (it can also be run on Windows if you have a Bash-compatible environment, such as WSL).  
+**Dependencies**:
+- [Node.js]([https://docs.docker.com/get-docker/](https://nodejs.org/es)): Required to execute helper scripts written in JavaScript. Ensure you have Node.js installed and properly configured.
+- [Docker](https://docs.docker.com/get-docker/): Utilized for creating and managing network nodes through containerization. Make sure Docker is installed and running.
+- Git: Needed to clone the project repository.
 
-## Installation  
+## 🔧 Installation  
 
 ### Clone the Repository  
-
-First, clone the repository to your local machine:
+Use the following command to clone the repository to your local machine:
 
 ```bash
 git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
 ```
 
-### Install Dependencies  
+## 🌟 Try it yourself
+1. Move to the script directory
+2. Execute the script with the following command
+   ```bash
+   ./script.sh
+   ```
 
-Make sure you have Docker installed on your system. If you don’t have it, you can follow the installation instructions [here](https://docs.docker.com/get-docker/).  
-
-# Script  
 ## createBESUnetwork.sh  
 The `createBESUnetwork.sh` script automates the creation of a BESU network (Ethereum client compatible with testnets and Mainnet).  
 
