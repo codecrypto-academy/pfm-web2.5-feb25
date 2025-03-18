@@ -1,34 +1,33 @@
-# pfm-web2.5-feb25  
-This project automates the process of creating and managing a blockchain network using Hyperledger Besu.
+# Besu Netwwork management
+The diferent elements in this project allow you to manage a private hyperlayer Besu network, using proof of Authority Clique
 
-## Project Structure  
+## Project Structure 
 The project has the following file structure:
 
 ```
 📂 pfm-web2.5-feb25
  ├── 📂 script        
- │    └── createBESUnetwork.sh    # Script for automating the creation of a BESU network  
+ │    └── script.sh    # Script for automating the creation of a BESU network
  │    └── createPrivatePublicKeys.mjs    # Script for generating public and private keys  
- │    └── txTest.js    # Script for performing a test transaction  
- ├── 📂 lib           # TypeScript library  
- │    └── index.ts  
+ │    └── transaction.js    # Script for performing a test transaction  
+ ├── 📂 lib           # TypeScript library for managing a BESU network  
+ │    └── 📂 src
  ├── 📂 frontback     # NextJS framework  
- │    ├── 📂 src  
- │    │    └──  
  │    ...  
  ├── README.md  
  └── ...  
 ```
 
-## Technologies Used  
+# Part 1
+## Script for automatic creation of a Besu network
+
 
 ## Requirements  
-
 - **Operating System**: The script is designed to work on Linux and macOS-based systems (it can also be run on Windows if you have a Bash-compatible environment, such as WSL).  
 - **Dependencies**:  
-  - **Node.js**  
-  - **Docker**: Used for container and network creation.  
-  - **Git**: To clone the repository.  
+  - **Node.js**: Helper scripts are programmed with JS, to run them you must have the Node.js enviroment.
+  - **Docker**: This script uses a container based approach to create each of the network nodes.  
+  - **Git**: To clone the repository.
 
 ## Installation  
 
