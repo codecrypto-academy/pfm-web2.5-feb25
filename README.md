@@ -72,7 +72,10 @@ git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
 
 ### Example Usage:  
 
-**Video**
+[**Video**](https://youtu.be/ctXvr1Kd740)
+
+## Transaction test script
+[**Video**](https://youtu.be/19NL3LAkO6Y)
 
 ## 📖 Explanation
 ### Helper Scripts
