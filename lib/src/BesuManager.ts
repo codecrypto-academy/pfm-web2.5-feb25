@@ -20,7 +20,7 @@ export const deployNetwork = async (numNodes: number, chainId: number, extraAcco
     }
 
     console.log("🚀 Ejecutando el script de despliegue...");
-    const result = shell.exec(`bash ${SCRIPT_PATH} ${numNodes} ${extraAccount} ${chainId}`, { silent: false });
+    const result = shell.exec(`bash ${SCRIPT_PATH} ${numNodes} ${chainId} ${extraAccount}`, { silent: false });
 
     if (result.code !== 0) {
         console.error("❌ Error al desplegar la red:", result.stderr);
@@ -95,3 +95,85 @@ export const deleteNetwork = async () => {
     console.log("✅ Red Besu eliminada completamente.");
 };
 
+// const ADD_NODE_SCRIPT = path.join(__dirname, "../../script/addNode.sh");
+
+// export const addNode = async () => {
+//     console.log("➕ Agregando un nuevo nodo a la red Besu...");
+
+//     if (!fs.existsSync(ADD_NODE_SCRIPT)) {
+//         console.error(`❌ Error: No se encuentra el script ${ADD_NODE_SCRIPT}`);
+//         throw new Error("No se pudo encontrar el script para agregar nodos.");
+//     }
+
+//     try {
+//         shell.chmod("+x", ADD_NODE_SCRIPT);
+//     } catch (error) {
+//         console.error("❌ Error al dar permisos al script:", error);
+//     }
+
+//     console.log("🚀 Ejecutando el script para agregar un nodo...");
+//     const result = shell.exec(`bash ${ADD_NODE_SCRIPT}`, { silent: false });
+
+//     if (result.code !== 0) {
+//         console.error("❌ Error al agregar nodo:", result.stderr);
+//         throw new Error("No se pudo agregar el nodo a la red Besu.");
+//     }
+
+//     console.log("✅ Nodo agregado correctamente.");
+// };
+
+const ADD_NODE_SCRIPT = path.join(__dirname, "../../script/add_node.sh");
+const NODE_DIR = path.join(__dirname, "../../besu");
+
+export const addNode = async () => {
+    console.log("➕ Agregando un nuevo nodo a la red Besu...");
+
+    if (!fs.existsSync(ADD_NODE_SCRIPT)) {
+        console.error(`❌ Error: No se encuentra el script en la ruta: ${ADD_NODE_SCRIPT}`);
+        throw new Error("No se pudo encontrar el script para agregar nodos.");
+    }
+
+    try {
+        shell.chmod("+x", ADD_NODE_SCRIPT);
+    } catch (error) {
+        console.error("❌ Error al dar permisos al script:", error);
+    }
+
+    // 📌 Obtener el número del nuevo nodo
+    let nodeNumber = await getNextNodeNumber();
+
+    if (!nodeNumber || isNaN(nodeNumber)) {
+        console.error("⚠️ Error al obtener el número del nuevo nodo. Se asignará 1 por defecto.");
+        nodeNumber = 1;
+    }
+
+    console.log(`🚀 Ejecutando el script para agregar nodo número: ${nodeNumber}`);
+
+    const result = shell.exec(`bash ${ADD_NODE_SCRIPT} ${nodeNumber}`, { silent: false });
+
+    if (result.code !== 0) {
+        console.error("❌ Error al agregar nodo:", result.stderr);
+        throw new Error("No se pudo agregar el nodo a la red Besu.");
+    }
+
+    console.log("✅ Nodo agregado correctamente.");
+};
+
+// 📌 Función para obtener el siguiente número de nodo
+const getNextNodeNumber = async (): Promise<number> => {
+    if (!fs.existsSync(NODE_DIR)) {
+        console.log("⚠️ No existe la carpeta de nodos. Se asignará el nodo 1.");
+        return 1;
+    }
+
+    const existingNodes = fs.readdirSync(NODE_DIR)
+        .filter(folder => folder.startsWith("nodo"))
+        .map(folder => parseInt(folder.replace("nodo", ""), 10))
+        .filter(num => !isNaN(num));
+
+    const nextNode = existingNodes.length > 0 ? Math.max(...existingNodes) + 1 : 1;
+
+    console.log(`🔍 Último nodo detectado: ${Math.max(...existingNodes, 0)}, siguiente nodo: ${nextNode}`);
+
+    return nextNode;
+};
