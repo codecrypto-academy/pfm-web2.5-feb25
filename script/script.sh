@@ -130,4 +130,4 @@ docker run -d --name rpc-node --label besu-network --network besu-network --ip 1
 --node-private-key-file=/data/rpc-node/key
 
 # Realizar una prueba de transferencia
-node transaction.js 1002 0x$(cat ./besu-network/miner-node/key) 0x$(cat ./besu-network/bootnode/address) 1
+# node transaction.js 1002 0x$(cat ./besu-network/miner-node/key) 0x$(cat ./besu-network/bootnode/address) 1
