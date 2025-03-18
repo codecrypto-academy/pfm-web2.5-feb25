@@ -31,7 +31,7 @@ The project has the following file structure:
 ## ⚙️ Requirements  
 **Operating System**: The script is designed to work on Linux and macOS-based systems (it can also be run on Windows if you have a Bash-compatible environment, such as WSL).  
 **Dependencies**:
-- [Node.js]([https://docs.docker.com/get-docker/](https://nodejs.org/es)): Required to execute helper scripts written in JavaScript. Ensure you have Node.js installed and properly configured.
+- [Node.js](https://nodejs.org/es): Required to execute helper scripts written in JavaScript. Ensure you have Node.js installed and properly configured.
 - [Docker](https://docs.docker.com/get-docker/): Utilized for creating and managing network nodes through containerization. Make sure Docker is installed and running.
 - Git: Needed to clone the project repository.
 
