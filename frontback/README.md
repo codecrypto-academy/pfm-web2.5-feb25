@@ -32,31 +32,51 @@ Use your favourite browser to show the `Home page` at [`localhost:3000`](http://
 
 You can follow the instructions described at Home page to create a new network. 
 
-<div style="position: relative; padding-bottom: 64.5933014354067%; height: 0;"><iframe src="https://www.loom.com/embed/651d11d8cb3948ce950698752365fb4f?sid=1980fa33-cb66-4492-8782-43859a41bf71" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+<div>
+    <a href="https://www.loom.com/share/651d11d8cb3948ce950698752365fb4f">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/651d11d8cb3948ce950698752365fb4f-df3c6abb0254b29b-full-play.gif">
+    </a>
+  </div>
 
 ### Decting Docker status
 
 The application will check if Docker is running on your system each time you go into the Dashboard. 
 
-<div style="position: relative; padding-bottom: 64.5933014354067%; height: 0;"><iframe src="https://www.loom.com/embed/513ce200a7ac4a06a94fd1597625bcad?sid=22d3fd36-9c12-4ca2-bec1-1551d9366736" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+<div>
+    <a href="https://www.loom.com/share/513ce200a7ac4a06a94fd1597625bcad">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/513ce200a7ac4a06a94fd1597625bcad-17aaae98f429ce09-full-play.gif">
+    </a>
+  </div>
 
 ### Creating a network 
 
 You can create a new network or swith to a previous created into the Dashboard.
 
-<div style="position: relative; padding-bottom: 64.5933014354067%; height: 0;"><iframe src="https://www.loom.com/embed/28c69a1a63194898b6aae0800f281342?sid=6e936aea-0562-4143-853d-761afb76c306" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+<div>
+    <a href="https://www.loom.com/share/28c69a1a63194898b6aae0800f281342">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/28c69a1a63194898b6aae0800f281342-ddbd1ae0d3b94676-full-play.gif">
+    </a>
+  </div>
 
 ### Creating a node 
 
 The first node you create will be considered as the 'master' node, and will serve others with its enode URL.
 
-<div style="position: relative; padding-bottom: 64.5933014354067%; height: 0;"><iframe src="https://www.loom.com/embed/c7524c1bce8d4e679f7e33b431fe5d3a?sid=07ecd738-0326-4c42-97b4-4850cdb4910b" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+<div>
+    <a href="https://www.loom.com/share/c7524c1bce8d4e679f7e33b431fe5d3a">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/c7524c1bce8d4e679f7e33b431fe5d3a-169190afb3c3fe87-full-play.gif">
+    </a>
+  </div>
 
 ### Creating other nodes
 
 Each node you create after the first will be considered a 'slave' node and will use `enode` URL of the first to manage the P2P links. 
 
-<div style="position: relative; padding-bottom: 64.5933014354067%; height: 0;"><iframe src="https://www.loom.com/embed/b7b689e66554423c931fc997fd17a3f4?sid=6d04970b-6cd1-4aa1-9817-dd369f34c006" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+<div>
+    <a href="https://www.loom.com/share/b7b689e66554423c931fc997fd17a3f4">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/b7b689e66554423c931fc997fd17a3f4-74107da63181e9e6-full-play.gif">
+    </a>
+  </div>
 
 ## Considerations
 
