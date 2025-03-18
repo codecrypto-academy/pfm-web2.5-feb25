@@ -101,3 +101,8 @@ export function lanzarNodo(NETWORK_NAME: string, NODO_PUERTO:number): Promise<st
         });
     });
 }
+
+
+export async function getNetworkData() {
+    return { message: "API REST funcionando correctamente" };
+}

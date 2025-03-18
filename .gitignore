@@ -4,6 +4,12 @@ node_modules/
 # Ignorar todo el contenido dentro de la carpeta network/bootnode, pero permitir que la carpeta vacía se suba
 network/*
 
+# Ignorar de la carpeta front-back
+front-back/next/
+front-back/node_modules/
+
+
+
 # Archivos específicos de Visual Studio Code
 .vscode/
 

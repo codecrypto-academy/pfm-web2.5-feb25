@@ -1,0 +1,22 @@
+{
+  "config": {
+    "chainId": 2819,
+    "londonBlock": 0,
+    "clique": {
+      "blockperiodseconds": 4,
+      "createemptyblocks": true,
+      "epochlength": 30000
+    }
+  },
+  "extraData": "0x0000000000000000000000000000000000000000000000000000000000000000a9fc77a4e2d20d7c69188735ed41cda0544505a60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "gasLimit": "0xa00000",
+  "difficulty": "0x1",
+  "alloc": {
+    "e0fa3AB82068b8BE514F75179182b7409b1dA51C": {
+      "balance": "0xad78ebc5ac6200000"
+    },
+    "a9fc77a4e2d20d7c69188735ed41cda0544505a6": {
+      "balance": "0xad78ebc5ac6200000"
+    }
+  }
+}

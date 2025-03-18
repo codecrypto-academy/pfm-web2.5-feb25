@@ -17,7 +17,7 @@ Con este proyecto, se profundiza en:
 
 ***
 
-## 📌Tareas llevadas a cabo hasta el momento (Proyecto en desarrollo...)
+## 📌Etapa 1. Tareas Backend
 ### 1️⃣ Script para desplegar múltiples nodos con Docker
 Se ha desarrollado un script automatizado para iniciar múltiples nodos en la red con comandos Docker.
 
@@ -44,13 +44,13 @@ npx jest test/netManager.test.ts
 * 🎥[ProyBesu.Lib/Test Parte 2](https://www.loom.com/share/1362437658e849ba8aeeccfbd0abcd7c?sid=777d8f50-a2a3-4205-97bf-f0b678e1cbff)
 ***
 
-## 🚀 Cómo levantar la red desde el script
+### 🚀 Cómo levantar la red desde el script
 Ejecuta el siguiente comando en la terminal:
 ```sh 
 ./script/script.sh 
 ```
 
-## ✅ Pruebas de la librería
+### ✅ Pruebas de la librería
 Puedes ejecutar las pruebas unitarias de la automatización de la red con Jest:
 ```sh 
 npx jest test/netManager.test.ts
@@ -73,3 +73,79 @@ curl -X POST http://localhost:2819
   -H "Content-Type: application/json" \
   --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["0x70997970C51812dc3A010C7d01b50e0d17dc79C8", "latest"],"id":1}'
 ```
+
+
+## 📌Etapa 2. Panel de Control
+### 1️⃣ Pantalla de Inicio 
+La app distingue dos grupos: recursos para la gestión de redes personalizadas y recursos para gestionar cuentas Ethereum.
+
+📌 Interfaz de inicio:<br>
+<img src="screens/p1.png" alt="script" width="500"/><br>
+
+### 2️⃣ Recorrido por NetTools
+En esta sección, pestaña Network, podras crear una red desde cero, ingresando los parámetros más relevantes que la conforman: nombre, chainId, dirección de red (y calcular de forma correcta la ip de bootnode que tendra tu red), e incluso ingresar una cuenta a la que se le asignaran 200 ETH de fondos.Luego en la pestaña Node, podras consultar los nodos (contenedores) que tus redes tienen asociados. 
+
+📌 Network Management - Pestaña Network<br>
+<img src="screens/p2-network.png" alt="network" width="500"/><br>
+
+📌 Node Management - Pestaña Node<br>
+<img src="screens/p3-node.png" alt="node" width="500"/><br>
+
+### 🔗 Detalles en video:
+* 🎥[ProyBesu.NetTools. Parte 1](https://www.loom.com/share/e301b07533d24488935e5de3ee805dfd?sid=823abf42-4e8b-4660-9ef9-a8aef840bcc2)
+* 🎥[ProyBesu.NetTools. Parte 2](https://www.loom.com/share/5b5a133fd55d449f8fa82d79306d0c1d?sid=7810d5cc-3c95-40cc-8143-e742156250f0)
+***
+
+### 3️⃣ Recorrido por EthereumTools
+En esta sección, podras conectarte a una cuenta Ethereum desde metamask y elegir que hacer: 
+- 🔹 Faucet: Pedir fondos (5 ETH por cada solicitud)
+- 🔹 Balance: Revisar el balance de tu cuenta
+- 🔹 Transfer: Transferir fondos de una cuenta a otra
+
+📌 Veamos EthereumTools en acción<br>
+<img src="screens/balance.png" alt="script" width="500"/><br>
+<img src="screens/faucet.png" alt="script" width="500"/><br>
+<img src="screens/transfer.png" alt="script" width="500"/><br>
+
+### 🔗 Detalles en video:
+* 🎥[ProyBesu.EthereumTools](https://www.loom.com/share/75383011c2cf4f808db6b6219d7fe913?sid=91c36b5a-3d74-4856-b5d8-16d4b92418a9)
+***
+
+## 🚀Lo relevante que tienen que conocer de la estrutura el proyecto
+
+📂 front-back (Nextjs)
+ ├──📂 network (donde se guardara tu blockchain)
+ ├──📂 script (files con los procesos de red)
+ ├──📂 src
+    ├── 📂 app 
+    │    ├── 📂 api
+         │    ├── 📂 docker-networks
+                  ├── route.ts
+         │    ├── 📂 router
+                  ├── route.ts
+    │    ├── 📂 ethereum
+    │    │    ├── page.tsx
+    │    │    ├── layout.tsx    
+    │    │    ├── 📂 balance
+    │    │    │    └── page.tsx  
+    │    │    ├── 📂 faucet
+    │    │    │    └── page.tsx
+    │    │    ├── 📂 transfer
+    │    │    │    └── page.tsx    
+    │    ├── 📂 net
+    │    │    ├── page.tsx
+    │    │    ├── layout.tsx     
+    │    │    ├── 📂 node
+    │    │    │    └── page.tsx  (desde aqui quiero usar netManager.tsx) 
+    │    │    ├── 📂 network
+    │    │    │    └── page.tsx  
+    │    ├── page.tsx
+    │    ├── layout.tsx 
+    ├── 📂 components
+    │    ├── MainHeader.tsx   
+    │    ├── EthereumHeader.tsx  
+    │    ├── NetHeader.tsx   
+    ├── 📂 context
+    │    ├── GlobalContext.tsx   
+    ├── 📂 lib
+    │    ├── action.ts
