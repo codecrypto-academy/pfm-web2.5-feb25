@@ -1,0 +1,37 @@
+{
+  "name": "lib",
+  "version": "1.0.0",
+  "description": "Librería para gestionar la red Besu",
+  "main": "dist/index.js",
+  
+  "types": "dist/index.d.ts",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --verbose",
+    "clean": "rm -rf dist",
+    "start": "node dist/index.js",
+    
+    "deploy": "ts-node src/runDeploy.ts"
+
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+ 
+  "type": "commonjs",
+
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^29.5.14",
+    "@types/shelljs": "^0.8.15",
+    "dotenv": "^16.4.7",
+    "fs-extra": "^11.3.0",
+    "jest": "^29.7.0",
+    "shelljs": "^0.9.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}
