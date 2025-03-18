@@ -56,6 +56,18 @@ git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
    ./script.sh
    ```
 **Result**
+[Diagrama de flujo.pdf](https://github.com/user-attachments/files/19304447/Diagrama.de.flujo.pdf)
+1. A running docker network called besu-network
+2. A directory called besu-network
+3. A directory for each of the nodes
+4. A key pair for each node inside of the node directory
+   - The private key is stored inside the key file
+   - The public key is stored inside the pub file
+   - The address is stored inside the address file
+   - For the bootnode the enode is stored inside the enode file
+5. A running miner node (Should produce blocks)
+6. A running bootnode
+7. A running rpc node (Listens in the 1002 port)
 
 ### Example Usage:  
 
