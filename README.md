@@ -130,4 +130,7 @@ You can install the library with the following command:
    npm i besu-management
    ```
 
+### Example Usage: 
+🛠️Working on this
+
 ❗Note: When you create a network you should specify a /24 subnet
