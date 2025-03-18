@@ -112,9 +112,22 @@ This script creates a public private key pair
 # TypeScript Library for managing a BESU network
 [UMLClassDiagram.pdf](https://github.com/user-attachments/files/19307118/UMLClassDiagram.pdf)
 
+## ⚙️ Requirements  
+**Operating System**: The library is designed to work on Linux and macOS-based systems (it can also be run on Windows if you have a Bash-compatible environment, such as **WSL**).  
+**Dependencies**:
+- [Node.js](https://nodejs.org/es)
+- [Docker](https://docs.docker.com/get-docker/)
+
+**Js library dependecies**
+- Elliptic
+- keccak256
+- Ethers
+- Buffer
 
 ## 🔧 Installation 
 You can install the library with the following command:
    ```bash
    npm i besu-management
    ```
+
+❗Note: When you create a network you should specify a /24 subnet
