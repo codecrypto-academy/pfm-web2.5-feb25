@@ -47,19 +47,14 @@ git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
 ## 🌟 Try it yourself
 
 1. Move to the script directory
-2. Execute the script with the following command
+2. Make sure the script has execution permissions
+   ```bash
+   chmod +x script.sh
+   ```
+3. Execute the script with the following command
    ```bash
    ./script.sh
    ```
-
-### Running the Script  
-
-Once you have cloned the repository, navigate to the project folder and make the script executable:
-
-```bash
-cd pfm-web2.5-feb25
-chmod +x createBESUnetwork.sh
-```
 
 ### Example Usage:  
 This command will create a BESU network called "TEST" with 4 nodes.  
