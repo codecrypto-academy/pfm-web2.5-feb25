@@ -60,7 +60,7 @@ class BesuNetwork {
     fs.mkdirSync(this.directory);
 
     // 2. CREATE KEYS FOR EACH OF THE INITAL VALIDATORS
-    const validatorKeys = [];
+    const validatorKeys:Keys[] = [];
     for (let i = 0; i < initialValidators; i++) {
       // Create a key pair
       validatorKeys.push(genKeyPair());
@@ -75,7 +75,7 @@ class BesuNetwork {
     const initialValidatorsAddressString = initialValidatorsAddress.join("");
 
     // Create the alloc object with each of the initial validator addresses
-    const alloc = initialValidatorsAddress.reduce((acc, address) => {
+    const alloc = initialValidatorsAddress.reduce((acc: { [key: string]: { balance: string } }, address) => {
       acc[`0x${address}`] = {
         balance: "0x200000000000000000000000000000000000000000000000000000000000000"
       };
@@ -119,7 +119,7 @@ class BesuNetwork {
       try {
         execSync(`docker network create ${this.name} --subnet ${this.subnet}`, { encoding: "utf-8" });
         console.log(`Network "${this.name}" created successfully.`);
-      } catch (createError) {
+      } catch (createError:any) {
         throw new Error(`Failed to create network: ${createError.message}`);
       }
     }
@@ -209,16 +209,21 @@ class BesuNetwork {
   deleteNode(name: string) {
     // Find the node
     const node = this._nodes.find((node) => node.name === name);
-    // Delete the node container
-    execSync(`docker rm ${node.name}`, { encoding: "utf-8" });
-    // Delete the node directory
-    fs.rmdirSync(`${node.network.directory}/${node.name}`, { recursive: true });
-    // Remove the node from the nodes array
-    this._nodes = this._nodes.filter((n) => n.name !== name);
-    // If the node is a bootnode remove the enode from the network and restart the network
-    if (node.is_bootnode) {
-      this._enodes = this._enodes.filter((enode) => enode !== node.enode);
-      this.restartNetwork();
+
+    if (node) {
+      // Delete the node container
+      execSync(`docker rm ${node.name}`, { encoding: "utf-8" });
+      // Delete the node directory
+      fs.rmdirSync(`${node.network.directory}/${node.name}`, { recursive: true });
+      // Remove the node from the nodes array
+      this._nodes = this._nodes.filter((n) => n.name !== name);
+      // If the node is a bootnode remove the enode from the network and restart the network
+      if (node.is_bootnode) {
+        this._enodes = this._enodes.filter((enode) => enode !== node.enode);
+        this.restartNetwork();
+      }
+    } else {
+      throw new Error("Node doesn't exist")
     }
   }
 
@@ -282,7 +287,7 @@ class BesuNode {
   private _rpc_enabled: boolean;
   private _rpc_port: number;
   private _is_bootnode: boolean;
-  private _enode: string;
+  private _enode: string|null;
 
   constructor(
     network: BesuNetwork,
@@ -301,6 +306,7 @@ class BesuNode {
     this._rpc_enabled = rpc_enabled;
     this._rpc_port = rpc_port;
     this._is_bootnode = is_bootnode;
+    this._enode = null;
 
     // 1. CREATE A DIRECTORY FOR THE NODE INSIDE THE NETWORK DIRECTORY
     // Check if another directory with the same name already exists
@@ -525,35 +531,35 @@ bootnodes=[
     return blockNumber;
   }
 
-  get name() {
+  get name(): string {
     return this._name;
   }
 
-  get network() {
+  get network(): BesuNetwork {
     return this._network;
   }
 
-  get address() {
+  get address(): string {
     return this._address;
   }
 
-  get ip() {
+  get ip(): number {
     return this._ip;
   }
 
-  get rpc_enabled() {
+  get rpc_enabled(): boolean {
     return this._rpc_enabled;
   }
 
-  get rpc_port() {
+  get rpc_port(): number {
     return this._rpc_port
   }
 
-  get is_bootnode() {
-    return this.is_bootnode
+  get is_bootnode(): boolean {
+    return this._is_bootnode;
   }
 
-  get enode () {
+  get enode(): string|null {
     return this._enode
   }
 
@@ -566,16 +572,16 @@ function genKeyPair() {
   // Crear par de llaves
   const keyPair = ec.genKeyPair();
   // Obtener llave privada
-  const privateKey = keyPair.getPrivate("hex");
+  const privateKey:string = keyPair.getPrivate("hex");
   // Obtener llave pública
-  const publicKey = keyPair.getPublic("hex");
+  const publicKey:string = keyPair.getPublic("hex");
 
   // Otener address
   const publicKeyBuffer = keccak256(Buffer.from(publicKey.slice(2), "hex"));
   // Obtener los últimos 20 bytes
   // 40 caracteres hexadecimales son equibalentes a 20 bytes
   // Cuando utilizamos slice con un start negativo se comienza a contar de derecha a izquierda y el finl default es el último caracter de la cadena
-  const address = publicKeyBuffer.toString("hex").slice(-40);
+  const address:string = publicKeyBuffer.toString("hex").slice(-40);
 
   return {
     privateKey,
