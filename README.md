@@ -80,16 +80,16 @@ curl -X POST http://localhost:2819
 La app distingue dos grupos: recursos para la gestión de redes personalizadas y recursos para gestionar cuentas Ethereum.
 
 📌 Interfaz de inicio:<br>
-<img src="screens/p1.png" alt="script" width="500"/><br>
+<img src="screens/p1.png" alt="script" width="800"/><br>
 
 ### 2️⃣ Recorrido por NetTools
 En esta sección, pestaña Network, podras crear una red desde cero, ingresando los parámetros más relevantes que la conforman: nombre, chainId, dirección de red (y calcular de forma correcta la ip de bootnode que tendra tu red), e incluso ingresar una cuenta a la que se le asignaran 200 ETH de fondos.Luego en la pestaña Node, podras consultar los nodos (contenedores) que tus redes tienen asociados. 
 
 📌 Network Management - Pestaña Network<br>
-<img src="screens/p2-network.png" alt="network" width="500"/><br>
+<img src="screens/p2-network.png" alt="network" width="800"/><br>
 
 📌 Node Management - Pestaña Node<br>
-<img src="screens/p3-node.png" alt="node" width="500"/><br>
+<img src="screens/p3-node.png" alt="node" width="400"/><br>
 
 ### 🔗 Detalles en video:
 * 🎥[ProyBesu.NetTools. Parte 1](https://www.loom.com/share/e301b07533d24488935e5de3ee805dfd?sid=823abf42-4e8b-4660-9ef9-a8aef840bcc2)
@@ -103,49 +103,14 @@ En esta sección, podras conectarte a una cuenta Ethereum desde metamask y elegi
 - 🔹 Transfer: Transferir fondos de una cuenta a otra
 
 📌 Veamos EthereumTools en acción<br>
-<img src="screens/balance.png" alt="script" width="500"/><br>
-<img src="screens/faucet.png" alt="script" width="500"/><br>
-<img src="screens/transfer.png" alt="script" width="500"/><br>
+<img src="screens/balance.png" alt="script" width="800"/><br>
+<img src="screens/faucet.png" alt="script" width="800"/><br>
+<img src="screens/transfer.png" alt="script" width="800"/><br>
 
 ### 🔗 Detalles en video:
 * 🎥[ProyBesu.EthereumTools](https://www.loom.com/share/75383011c2cf4f808db6b6219d7fe913?sid=91c36b5a-3d74-4856-b5d8-16d4b92418a9)
 ***
 
 ## 🚀Lo relevante que tienen que conocer de la estrutura el proyecto
+<img src="screens/test.png" alt="script" width="500"/><br>
 
-📂 front-back (Nextjs)
- ├──📂 network (donde se guardara tu blockchain)
- ├──📂 script (files con los procesos de red)
- ├──📂 src
-    ├── 📂 app 
-    │    ├── 📂 api
-         │    ├── 📂 docker-networks
-                  ├── route.ts
-         │    ├── 📂 router
-                  ├── route.ts
-    │    ├── 📂 ethereum
-    │    │    ├── page.tsx
-    │    │    ├── layout.tsx    
-    │    │    ├── 📂 balance
-    │    │    │    └── page.tsx  
-    │    │    ├── 📂 faucet
-    │    │    │    └── page.tsx
-    │    │    ├── 📂 transfer
-    │    │    │    └── page.tsx    
-    │    ├── 📂 net
-    │    │    ├── page.tsx
-    │    │    ├── layout.tsx     
-    │    │    ├── 📂 node
-    │    │    │    └── page.tsx  (desde aqui quiero usar netManager.tsx) 
-    │    │    ├── 📂 network
-    │    │    │    └── page.tsx  
-    │    ├── page.tsx
-    │    ├── layout.tsx 
-    ├── 📂 components
-    │    ├── MainHeader.tsx   
-    │    ├── EthereumHeader.tsx  
-    │    ├── NetHeader.tsx   
-    ├── 📂 context
-    │    ├── GlobalContext.tsx   
-    ├── 📂 lib
-    │    ├── action.ts
