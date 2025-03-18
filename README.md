@@ -57,8 +57,12 @@ git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
    ```
 
 ### Example Usage:  
-This command will create a BESU network called "TEST" with 4 nodes.  
+
+**Video**
 [https://github.com/your-username/your-repo/raw/main/video.mp4" type="video/mp4](https://github.com/davidGalaviz/pfm-web2.5-feb25/blob/main/script/video-script-demo.mp4)
 
-## createPrivatePublicKeys.mjs  
+## 📖 Explanation
+### Helper Scripts
+## 🔐createPrivatePublicKeys.mjs
+This script creates a public private key pair
 ![CodeCrypto (1)](https://github.com/user-attachments/assets/6957b154-1bd2-4162-98c2-1815688fee51)
