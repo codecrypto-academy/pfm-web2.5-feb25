@@ -8,6 +8,7 @@ import { Buffer } from "buffer";
 import keccak256 = require("keccak256");
 
 
+// Note this is only valid for /24 ip networks
 // Function to validate the format of a docker subnet
 function isValidDockerSubnet(subnet: string): boolean {
   const regex = /^((25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])\/([0-9]|[12][0-9]|3[0-2])$/;
@@ -28,7 +29,6 @@ class BesuNetwork {
   private _chainID: number;
   private _directory: string;
   private _nodes: BesuNode[];
-  private _validators: BesuValidator[];
   private _enodes: string[];
 
   constructor(
@@ -178,9 +178,6 @@ class BesuNetwork {
     return this._nodes;
   }
 
-  get validators() {
-    return this._validators;
-  }
 
   get enodes() {
     return this._enodes;
@@ -429,8 +426,11 @@ bootnodes=[
 
   restart() {
     // Restart the node container
+    // 1. Stop the container
     this.stop();
+    // 2. Delete the node config file
     fs.rmSync(`${this._network.directory}/${this._name}/config.toml`);
+    // 3. Create the confing file again 
     this.createConfigFile();
     execSync(`docker rm ${this._name}`, { encoding: "utf-8" });
     execSync(
@@ -491,7 +491,7 @@ bootnodes=[
     const reciept = await tx.wait();
 
     const balanceReciverAfter = await provider.getBalance(reciverAddress);
-    console.log("💗GOD IS GOOD", reciept)
+
     return {
       reciverAddress,
       balanceReciverBefore,
@@ -559,10 +559,6 @@ bootnodes=[
 
 }
 
-class BesuValidator {
-
-}
-
 // Function to generate a key pair
 function genKeyPair() {
   // Crear curva elíptica sep256k1 (la que usa Ethereum y por lo tanto también la que usa Besu por que Besu se construye sobre Ethereum)
@@ -611,7 +607,6 @@ async function transaction(rpc_port: number, senderPriv: string, reciverAddress:
     gasPrice: (await provider.getFeeData()).gasPrice
   });
 
-  console.log(tx);
   const reciept = await tx.wait();
 
   const balanceReciverAfter = await provider.getBalance(reciverAddress);
@@ -624,5 +619,5 @@ async function transaction(rpc_port: number, senderPriv: string, reciverAddress:
   });
 }
 
-export { BesuNetwork, BesuNode, BesuValidator, deleteNetwork, transaction };
+export { BesuNetwork, BesuNode, deleteNetwork, transaction };
 
