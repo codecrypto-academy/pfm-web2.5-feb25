@@ -94,6 +94,7 @@ En esta sección, pestaña Network, podras crear una red desde cero, ingresando 
 ### 🔗 Detalles en video:
 * 🎥[ProyBesu.NetTools. Parte 1](https://www.loom.com/share/e301b07533d24488935e5de3ee805dfd?sid=823abf42-4e8b-4660-9ef9-a8aef840bcc2)
 * 🎥[ProyBesu.NetTools. Parte 2](https://www.loom.com/share/5b5a133fd55d449f8fa82d79306d0c1d?sid=7810d5cc-3c95-40cc-8143-e742156250f0)
+* 🎥[ProyBesu.NetTools. Parte 3](https://www.loom.com/share/7a12faed6e704826a8a2ff79bc038435?sid=502fdb49-9460-40da-9034-58444db94466)
 ***
 
 ### 3️⃣ Recorrido por EthereumTools
