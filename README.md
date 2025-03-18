@@ -73,7 +73,6 @@ git clone https://github.com/davidGalaviz/pfm-web2.5-feb25.git
 ### Example Usage:  
 
 **Video**
-[https://github.com/your-username/your-repo/raw/main/video.mp4" type="video/mp4](https://github.com/davidGalaviz/pfm-web2.5-feb25/blob/main/script/video-script-demo.mp4)
 
 ## 📖 Explanation
 ### Helper Scripts
