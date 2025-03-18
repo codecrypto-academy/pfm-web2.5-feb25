@@ -5,6 +5,8 @@
         "declaration": true,
         "strict": true,
         "outDir": "./dist",
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]
