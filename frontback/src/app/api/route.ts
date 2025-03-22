@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
 
             await besu.createNetwork(networkName, chainId, subnet);
             await besu.addBootnode(bootnode.name, networkName, subnet, bootnode.port, `networks/${networkName}`);
+            await new Promise(resolve => setTimeout(resolve, 5000)); //Wait 5 sc.
             if (nodes && nodes.length > 0) {
                 for (const node of nodes) {
                     await besu.addNode(node.name, networkName, node.port, `networks/${networkName}`);

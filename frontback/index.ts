@@ -14,10 +14,6 @@ export class BesuNetwork {
 
     constructor() {
         // Initialize networks from a persistent storage if needed
-        
-        /*if (typeof window !== 'undefined') {
-            this.listenForMetaMaskNetworkChange();
-        }*/
     }
     
 
@@ -42,58 +38,6 @@ export class BesuNetwork {
         this.provider = new JsonRpcProvider(activeNodeUrl);
         console.log(`Active node for ${networkName} set to ${activeNodeUrl}`);
     }
-
-     // Listen for network/RPC changes in MetaMask (Not working) 
-     /*private listenForMetaMaskNetworkChange(): void {
-        if (typeof window.ethereum !== 'undefined') {
-            window.ethereum.on('chainChanged', (chainId: string) => {
-                console.log(`MetaMask network changed to chainId: ${chainId}`);
-                const networkName = Object.keys(this.networks).find(network => 
-                    this.networks[network].chainId === chainId);
-                
-                if (networkName) {
-                    
-                    const currentRpcUrl = window.ethereum.rpcUrls?.[0] || window.ethereum.providerConfig?.rpcUrl;
-                    this.setActiveNode(networkName, currentRpcUrl);
-                    console.log(`Updated RPC URL to MetaMask's current RPC: ${currentRpcUrl}`);
-                }
-            });
-        }
-    }
-
-    private updateProviderFromMetaMask(chainId: string): void {
-        console.log(`Updating provider for chainId: ${chainId}`);
-        const networkName = Object.keys(this.networks).find(network => 
-            this.networks[network].chainId === chainId);
-        
-        if (networkName) {
-            try {
-                 // Intentar obtener la URL RPC directamente desde el proveedor
-                 let rpcUrl;
-                
-                 // Método 1: intentar obtener mediante solicitud al proveedor
-                 if (window.ethereum.request) {
-                     try {
-                         // Esta es una operación asíncrona, pero la ejecutamos inmediatamente
-                         window.ethereum.request({ method: 'eth_getProviderConfig' })
-                             .then((config: any) => {
-                                 if (config && config.rpcUrl) {
-                                     console.log(`Got RPC URL from provider: ${config.rpcUrl}`);
-                                     this.setActiveNode(networkName, config.rpcUrl);
-                                 }
-                             })
-                             .catch((err: any) => {
-                                 console.error("Failed to get provider config:", err);
-                             });
-                     } catch (e) {
-                         console.log("eth_getProviderConfig not supported, trying alternative methods");
-                     }
-                 }               
-            } catch (error) {
-                console.log(error);
-            }     
-        }
-    }*/
 
     async reset(networkName: string): Promise<void> {
         try {
@@ -219,7 +163,8 @@ export class BesuNetwork {
 
             this.createGenesisFile(networkPath, this.networks[networkName].chainId, bootnodeAddress);
             const subnetIp = subnet.split('/')[0];//Extract IP from subnet
-            this.createConfigFile(networkPath, subnetIp, bootnodePublicKey.slice(2));
+            const bootnodeIp = `${subnetIp.split('.')[0]}.${subnetIp.split('.')[1]}.${subnetIp.split('.')[2]}.2`;
+            this.createConfigFile(networkPath, bootnodeIp, bootnodePublicKey.slice(2));
 
             execSync(`
                 docker run -d --name ${containerName} \
